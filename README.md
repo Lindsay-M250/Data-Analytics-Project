@@ -125,13 +125,16 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 
 ## Work split
 
-| Person | Table | Research question / role |
-|---|---|---|
-| | GDP | |
-| | Employment | |
-| | Youth unemployment | |
-| | Population | |
-| | Sector GVA | |
+| Person | Table | Before the data freeze (until 6 Nov) | After the freeze (7 Nov onwards) |
+|---|---|---|---|
+| Rethabile | All (cleaning) | Writes the cleaning script: raw files to one tidy table, applying the group's decisions, summing sector data from NUTS3 to NUTS2, joining everything. Keeps the processing log | Helps with the limitations section and re-runs the whole project from scratch to check it works |
+| Lindsay | GDP and population | Codebook for both, proposes the GDP unit and time window, counts regions per year, checks the cleaned output | Question 1: is the gap between regions getting smaller? |
+| Bongolethu | Employment | Codebook, proposes the age group and sex choice, checks the cleaned output. Keeps the decision log | Question 2: do poorer regions grow faster? |
+| Winnie | Youth unemployment | Codebook, proposes 15-24 vs 15-29, checks the cleaned output. Keeps AI_Usage.md | Question 4: where do the two tests disagree? Leads the presentation, including the first slide on who did what |
+| Badusha | Sector GVA | Codebook, proposes which sectors to keep and how to make shares, checks the NUTS3 to NUTS2 sums | Question 3: which regions behave alike? |
+
+Everyone also writes the data and methods section of the report for their own table, and the results section for their own question.
+
 
 ## How to re-run everything
 
