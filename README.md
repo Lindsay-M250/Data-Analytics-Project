@@ -127,14 +127,13 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 
 | Person | Table | Before the data freeze (until 6 Nov) | After the freeze (7 Nov onwards) |
 |---|---|---|---|
-| Rethabile | All (cleaning) | Writes the cleaning script: raw files to one tidy table, applying the group's decisions, summing sector data from NUTS3 to NUTS2, joining everything. Keeps the processing log | Helps with the limitations section and re-runs the whole project from scratch to check it works |
-| Lindsay | GDP and population | Codebook for both, proposes the GDP unit and time window, counts regions per year, checks the cleaned output | Question 1: is the gap between regions getting smaller? |
-| Bongolethu | Employment | Codebook, proposes the age group and sex choice, checks the cleaned output. Keeps the decision log | Question 2: do poorer regions grow faster? |
-| Winnie | Youth unemployment | Codebook, proposes 15-24 vs 15-29, checks the cleaned output. Keeps AI_Usage.md | Question 4: where do the two tests disagree? Leads the presentation, including the first slide on who did what |
-| Badusha | Sector GVA | Codebook, proposes which sectors to keep and how to make shares, checks the NUTS3 to NUTS2 sums | Question 3: which regions behave alike? |
+| Rethabile | Population, plus joining all tables | Downloads the population table and writes its conversion code. Proposes the filters with the reason for each decision. Writes the script that joins all the tables, matches the regions and checks the region counts. Keeps the processing log | Works with Badusha on Question 3, helps with the limitations section, and re-runs the whole project from scratch to check it works |
+| Lindsay | GDP | Codebook, conversion code for GDP, reviews Rethabile's proposal for the GDP unit and time window, counts regions per year, checks the joined result. Keeps AI_Usage.md and looks after the README | Question 1: is the gap between regions getting smaller? |
+| Bongolethu | Employment | Codebook, conversion code for employment, reviews Rethabile's proposal for the age group and sex choice, checks the joined result. Keeps the decision log | Question 2: do poorer regions grow faster? |
+| Winnie | Youth unemployment | Codebook, conversion code for youth unemployment, reviews Rethabile's proposal (15-24 vs 15-29), checks the joined result | Question 4: where do the two tests disagree? Puts the presentation together |
+| Badusha | Sector GVA | Codebook, conversion code for the sector table including the NUTS3 to NUTS2 sum and the shares, reviews Rethabile's proposal on which sectors to keep, checks the joined result | Question 3: which regions behave alike? (with Rethabile) |
 
-Everyone also writes the data and methods section of the report for their own table, and the results section for their own question.
-
+Everyone also writes the data and methods section of the report for their own table, the results section for their own question, and the slides for their own part. The first slide of the presentation says who did what.
 
 ## How to re-run everything
 
