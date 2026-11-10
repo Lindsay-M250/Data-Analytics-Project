@@ -11,7 +11,7 @@ Final project for Data Analytics (MDE-CO-02, Fall 2026), Constructor University.
 ## Team
 
 - Lindsay
-- Bongolethu
+- Bhongolethu
 - Winnie
 - Rethabile
 - Badusha
@@ -95,13 +95,13 @@ Every choice about the data is made by the whole group and written here with the
 
 | # | Decision | Options | Our choice | Why | Status |
 |---|---|---|---|---|---|
-| 1 | Time window | 2000-2024, or stop at 2023 | 2000-2024 | All tables overlap in these years. The 2024 GDP values are provisional, so we flag them and check that results hold without 2024 | proposed |
-| 2 | GDP unit | Euro per head, PPS per head, or both | PPS per head (`PPS_EU27_2020_HAB`) as the main measure, euro per head (`EUR_HAB`) as a robustness check | PPS adjusts for price differences between countries, so it compares living standards better. The briefing says we must state which we used and why | proposed |
-| 3 | Employment measure | Ages 15-64, 20-64, or others; both sexes or separate | Ages 20-64, both sexes (`Y20-64`, `T`) | 20-64 is the age group of the EU employment target, so it is the standard measure for comparing regions | proposed |
-| 4 | Youth unemployment | Ages 15-24 or 15-29 | Ages 15-24, both sexes, all education levels (`Y15-24`, `T`, `TOTAL`), with 15-29 as a check | 15-24 is the standard headline definition of youth unemployment, so our numbers can be compared with other sources | proposed |
-| 5 | Sector grouping | 15 sector codes, some inside others | The six broad sectors that do not overlap: A, B-E, F, G-J, K-N, O-U. Shares of total gross value added (`TOTAL`) | These six add up to the total, so shares are consistent. The overlapping codes (for example C inside B-E) would count the same value twice | proposed |
-| 6 | Which countries | EU27 only (244 regions) or all 285 | EU27 only (244 regions) | Our question is about EU regions and EU cohesion funding. Turkey, Norway, Serbia, Albania, Montenegro and North Macedonia are not EU members | proposed |
-| 7 | Missing data | Drop regions with gaps, or keep and work around | Keep regions with a GDP value in both 2000 and 2024 and list how many we lose and which | Convergence tests compare the start and end of the period, so a region needs both | proposed |
+| 1 | Time window | 2000-2024, or stop at 2023 | 2000-2024 | All tables overlap in these years. The 2024 GDP values are provisional, so we flag them and check that results hold without 2024 | agreed |
+| 2 | GDP unit | Euro per head, PPS per head, or both | PPS per head (`PPS_EU27_2020_HAB`) as the main measure, euro per head (`EUR_HAB`) as a robustness check | PPS adjusts for price differences between countries, so it compares living standards better. The briefing says we must state which we used and why | agreed |
+| 3 | Employment measure | Ages 15-64, 20-64, or others; both sexes or separate | Ages 20-64, both sexes (`Y20-64`, `T`) | 20-64 is the age group of the EU employment target, so it is the standard measure for comparing regions | agreed |
+| 4 | Youth unemployment | Ages 15-24 or 15-29 | Ages 15-24, both sexes, all education levels (`Y15-24`, `T`, `TOTAL`), with 15-29 as a check | 15-24 is the standard headline definition of youth unemployment, so our numbers can be compared with other sources | agreed |
+| 5 | Sector grouping | 15 sector codes, some inside others | The six broad sectors that do not overlap: A, B-E, F, G-J, K-N, O-U. Shares of total gross value added (`TOTAL`) | These six add up to the total, so shares are consistent. The overlapping codes (for example C inside B-E) would count the same value twice | agreed |
+| 6 | Which countries | EU27 only (244 regions) or all 285 | EU27 only (244 regions) | Our question is about EU regions and EU cohesion funding. Turkey, Norway, Serbia, Albania, Montenegro and North Macedonia are not EU members | agreed |
+| 7 | Missing data | Drop regions with gaps, or keep and work around | Keep regions with a GDP value in both 2000 and 2024 and list how many we lose and which | Convergence tests compare the start and end of the period, so a region needs both | agreed |
 
 ## Processing log
 
@@ -122,6 +122,12 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 - Some regions have gaps in some years.
 - Some values are flagged provisional or low reliability.
 - The GDP table includes 41 non-EU regions.
+- Different coverage by indicator - sample is not identical
+- GVA is in current prices, GDP PPS is in PPS
+- GVA per capita depends on population merge
+- Sector data was incomplete for some region-years
+- Extra-regio ZZ regions are not real regions
+- NUTS-2 boundaries changed over time
 
 ## Work split
 
@@ -129,7 +135,7 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 |---|---|---|---|
 | Rethabile | Population, plus joining all tables | Downloads the population table and writes its conversion code. Reviews and adjusts the proposed filters, keeping a reason for each decision. Writes the script that joins all the tables, matches the regions and checks the region counts. Keeps the processing log | Works with Badusha on Question 3, helps with the limitations section, and re-runs the whole project from scratch to check it works |
 | Lindsay | GDP | Codebook, conversion code for GDP, reviews Rethabile's proposal for the GDP unit and time window, counts regions per year, checks the joined result. Keeps AI_Usage.md and looks after the README | Question 1: is the gap between regions getting smaller? |
-| Bongolethu | Employment | Codebook, conversion code for employment, reviews Rethabile's proposal for the age group and sex choice, checks the joined result. Keeps the decision log | Question 2: do poorer regions grow faster? |
+| Bhongolethu | Employment | Codebook, conversion code for employment, reviews Rethabile's proposal for the age group and sex choice, checks the joined result. Keeps the decision log | Question 2: do poorer regions grow faster? |
 | Winnie | Youth unemployment | Codebook, conversion code for youth unemployment, reviews Rethabile's proposal (15-24 vs 15-29), checks the joined result | Question 4: where do the two tests disagree? Puts the presentation together |
 | Badusha | Sector GVA | Codebook, conversion code for the sector table including the NUTS3 to NUTS2 sum and the shares, reviews Rethabile's proposal on which sectors to keep, checks the joined result | Question 3: which regions behave alike? (with Rethabile) |
 
