@@ -1,0 +1,250 @@
+---
+title: "Are EU regions converging?"
+subtitle: "Project C: income and employment gaps between EU regions, 2000-2024"
+author: "Project C Group 7"
+format:
+  html:
+    toc: true
+    embed-resources: true
+    code-fold: true
+execute:
+  warning: false
+---
+
+## Our question
+
+> Between 2000 and 2024, did EU27 NUTS2 regions converge in GDP per head (PPS) and employment rate (ages 20-64), and which groups of regions did not follow the pattern?
+
+## Data
+
+### GDP per head
+
+GDP per head comes from Eurostat table `nama_10r_2gdp`, in purchasing power standards (PPS, `PPS_EU27_2020_HAB`), for EU27 NUTS2 regions, 2000-2024. Extra-regio territories and non-EU countries were removed, which leaves 244 regions. PPS adjusts for price differences between countries, so it compares what incomes can buy and not only their size in euro. The 2024 values are provisional.
+
+<!-- Other table owners: add one short paragraph for your own table here (employment, youth unemployment, population, sector GVA). -->
+
+## Question 1: Is the gap between regions narrowing?
+
+### Measure
+
+We measure the gap with **sigma convergence**: for each year, the standard deviation of the natural logarithm of GDP per head across regions. A smaller value means regions are closer together. Using logarithms means the measure reflects percentage differences between regions, not differences in euro. We also compute the coefficient of variation (standard deviation divided by the mean), which is based on levels instead of logs.
+
+### Data and sample
+
+```{python}
+#| label: setup
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+path = "Project_gdp_EU27.csv"          # columns: geo, year, gdp_pc (PPS per head)
+gdp = pd.read_csv(path)
+gdp = gdp.rename(columns={"gdp_pc": "gdp_pps"})
+gdp["log_gdp"] = np.log(gdp["gdp_pps"])
+
+n_years = gdp.groupby("geo")["year"].nunique()
+balanced = n_years[n_years == 25].index          # regions with a value in every year 2000-2024
+
+def spread(df):
+    g = df.groupby("year")
+    return pd.DataFrame({
+        "regions": g["geo"].nunique(),
+        "sigma_log": g["log_gdp"].std(),                   # std. deviation of log GDP per head
+        "cv": g["gdp_pps"].std() / g["gdp_pps"].mean(),    # coefficient of variation
+    })
+
+A = spread(gdp)                                           # A: every region with a value that year
+B = spread(gdp[gdp["geo"].isin(balanced)])                # B: only regions with all 25 years
+C = spread(gdp[~gdp["geo"].str.startswith("RO")])         # C: sample A without Romania
+```
+
+The GDP file has 244 regions, but not all of them have a value in every year. Table 1 lists the regions with gaps.
+
+```{python}
+#| label: tbl-gaps
+#| tbl-cap: "Regions without a GDP value in every year 2000-2024, by country"
+span = gdp.groupby("geo")["year"].agg(first_year="min", last_year="max", years_with_data="count")
+span["country"] = span.index.str[:2]
+gaps = span[span["years_with_data"] < 25]
+names = {"BE": "Belgium", "FR": "France", "RO": "Romania"}
+gaps_by_country = gaps.groupby("country").agg(
+    regions=("first_year", "size"),
+    first_year_with_data=("first_year", "min"),
+    fewest_years_with_data=("years_with_data", "min"))
+gaps_by_country.index = [names.get(c, c) for c in gaps_by_country.index]
+gaps_by_country
+```
+
+Because of these gaps we use three samples:
+
+- **Sample A:** every region that has a value in a given year. The number of regions changes from year to year.
+- **Sample B:** only the 224 regions that have a value in every year. This sample is the same in every year.
+- **Sample C:** sample A without Romania, to isolate the effect of Romania's gap.
+
+### Results
+
+```{python}
+#| label: tbl-years
+#| tbl-cap: "Number of regions and spread of log GDP per head in selected years (A: all available, C: A without Romania, B: regions with every year)"
+years = [2000, 2001, 2002, 2003, 2008, 2011, 2012, 2019, 2024]
+table = pd.DataFrame({
+    "A regions": A.loc[years, "regions"], "A spread": A.loc[years, "sigma_log"],
+    "C regions": C.loc[years, "regions"], "C spread": C.loc[years, "sigma_log"],
+    "B regions": B.loc[years, "regions"], "B spread": B.loc[years, "sigma_log"],
+}).round(3)
+table.index.name = "Year"
+table
+```
+
+```{python}
+#| label: fig-sigma
+#| fig-cap: "Spread of GDP per head across EU regions, 2000-2024. The lower panel shows the number of regions in sample A; the grey band marks the years in which Romania's 8 regions have no GDP data."
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 7), sharex=True,
+                               gridspec_kw={"height_ratios": [3, 1]})
+ax1.plot(A.index, A["sigma_log"], "o-", label="A: all regions available each year")
+ax1.plot(C.index, C["sigma_log"], "^--", label="C: sample A without Romania")
+ax1.plot(B.index, B["sigma_log"], "s-", label=f"B: {len(balanced)} regions with every year")
+ax1.axvspan(2001.5, 2011.5, color="grey", alpha=0.12)
+ax1.text(2006.5, ax1.get_ylim()[1], "Romania's 8 regions have\nno GDP data 2002-2011",
+         ha="center", va="top", fontsize=9)
+ax1.set_ylabel("Std. deviation of log GDP per head (PPS)")
+ax1.legend(loc="upper right", bbox_to_anchor=(1, 0.88))
+ax1.grid(alpha=0.3)
+ax2.step(A.index, A["regions"], where="mid")
+ax2.axvspan(2001.5, 2011.5, color="grey", alpha=0.12)
+ax2.set_ylabel("Regions in A")
+ax2.set_xlabel("Year")
+ax2.grid(alpha=0.3)
+fig.tight_layout()
+plt.show()
+```
+
+The numbers quoted in the text below come from this code, so they can be checked:
+
+```{python}
+#| label: numbers
+def pct(S, col): return (S.loc[2024, col] / S.loc[2000, col] - 1) * 100
+
+print(f"Change in spread 2000-2024 (log):  A {pct(A,'sigma_log'):+.1f}%   B {pct(B,'sigma_log'):+.1f}%")
+print(f"Change in coefficient of variation: A {pct(A,'cv'):+.1f}%   B {pct(B,'cv'):+.1f}%")
+
+total_fall = B.loc[2000, "sigma_log"] - B.loc[2024, "sigma_log"]
+fall_2008 = B.loc[2000, "sigma_log"] - B.loc[2008, "sigma_log"]
+print(f"\nSample B: spread {B.loc[2000,'sigma_log']:.3f} (2000), {B.loc[2008,'sigma_log']:.3f} (2008), {B.loc[2024,'sigma_log']:.3f} (2024)")
+print(f"Total fall {total_fall:.3f}; fall by 2008 {fall_2008:.3f} = {fall_2008/total_fall*100:.0f}% of the total")
+print(f"Pace per year: 2000-2008 {fall_2008/8:.4f} | 2008-2024 {(B.loc[2008,'sigma_log']-B.loc[2024,'sigma_log'])/16:.4f}")
+print(f"Change 2019 to 2020 in B: {B.loc[2020,'sigma_log']-B.loc[2019,'sigma_log']:+.3f}")
+
+drop_A = A.loc[2000, "sigma_log"] - A.loc[2002, "sigma_log"]
+drop_C = C.loc[2000, "sigma_log"] - C.loc[2002, "sigma_log"]
+print(f"\nDrop 2000 to 2002: A {drop_A:.3f}, C (no Romania) {drop_C:.3f}; share caused by Romania {(drop_A-drop_C)/drop_A*100:.0f}%")
+print(f"Change 2011 to 2012: A {A.loc[2012,'sigma_log']-A.loc[2011,'sigma_log']:+.3f}, C {C.loc[2012,'sigma_log']-C.loc[2011,'sigma_log']:+.3f}")
+print(f"Romania adds to the spread: 2000 {A.loc[2000,'sigma_log']-C.loc[2000,'sigma_log']:.3f}, 2024 {A.loc[2024,'sigma_log']-C.loc[2024,'sigma_log']:.3f}")
+
+for y in (2001, 2024):
+    d = gdp[gdp["year"] == y].copy()
+    d["rank"] = d["gdp_pps"].rank(method="first")          # 1 = poorest
+    ro = d[d["geo"].str.startswith("RO")]
+    print(f"\n{y}: Romanian regions among the 12 poorest: {(ro['rank'] <= 12).sum()} of {len(ro)}; "
+          f"median GDP per head Romania {ro['gdp_pps'].median():,.0f} vs all regions {d['gdp_pps'].median():,.0f} "
+          f"({ro['gdp_pps'].median()/d['gdp_pps'].median()*100:.0f}%)")
+```
+
+### Interpretation
+
+Both samples show a fall in the spread of GDP per head (PPS) across EU regions between 2000 and 2024: by about 31% in sample A and 26% in sample B (@tbl-years, @fig-sigma). Regions therefore became more similar in income per head. The coefficient of variation also falls, but by less (about 13% in A and 10% in B).
+
+Most of the fall came before 2008. In sample B the spread fell from 0.465 to 0.393 by 2008, about 60% of the total fall of 0.121, or roughly 0.009 per year. From 2008 to 2024 it kept falling, but at about a third of that pace (roughly 0.003 per year). There was a small rise in 2020, which did not change the downward trend, and around 2012 sample B was almost unchanged.
+
+Sample A should be read with care. Eurostat has no GDP values for Romania's 8 regions in 2002-2011 (@tbl-gaps), so sample A has 232 regions in 2000, 224 in 2002 and 243 in 2012 (@fig-sigma, lower panel). Sample C (A without Romania) shows the effect: about two thirds of the drop in A between 2000 and 2002 (0.047 of 0.071) comes from the Romanian regions leaving the sample, and the rise in 2012 appears only in A. Including Romania adds 0.048 to the spread in 2000 but only 0.004 in 2024, which is why the fall looks larger in A (31%) than in B (26%).
+
+The Romanian regions started far below the rest: in 2001, 7 of the 8 were among the 12 poorest regions in the data, and their median GDP per head was about 27% of the median of all regions. By 2024 it was about 75%. Sample B is the more consistent picture, because it uses the same 224 regions in every year, but it leaves out Romania, Belgium and one French region, which have gaps. Because Romania's regions started so far below the rest and then caught up, B may understate how much narrowing took place.
+
+Overall, income per head became more similar across EU regions between 2000 and 2024, with most of the narrowing before 2008. This analysis does not show why this happened, for example whether EU funding played a role.
+
+### Robustness checks
+
+We repeated the analysis with three changes: without the largest city regions (GDP per head is inflated where many commuters work), starting in 2003 so that Belgium is included, and using euro per head instead of PPS.
+
+```{python}
+#| label: robustness
+#| tbl-cap: "Change in the spread of log GDP per head under different choices"
+cities = ["AT13", "BE10", "DE60", "DE30", "CZ01", "SK01", "FR10", "HU11", "PL91", "RO32"]
+cities = [c for c in cities if c in set(gdp["geo"])]
+D = spread(gdp[~gdp["geo"].isin(cities)])
+E = spread(gdp[gdp["geo"].isin(balanced) & ~gdp["geo"].isin(cities)])
+
+Spread03 = spread(gdp[gdp["year"] >= 2003])
+g03 = gdp[gdp["year"] >= 2003]
+full03 = g03.groupby("geo")["year"].nunique()
+full03 = full03[full03 == 22].index
+Cx = spread(g03[g03["geo"].isin(full03)])
+
+def chg(S, y0, y1): return (S.loc[y1, "sigma_log"] / S.loc[y0, "sigma_log"] - 1) * 100
+
+rob = pd.DataFrame({
+    "period": ["2000-2024"] * 4 + ["2003-2024"] * 2,
+    "sample": ["A (all available)", "B (every year)", "A without big cities", "B without big cities",
+               "A from 2003", f"B from 2003 ({len(full03)} regions, incl. Belgium)"],
+    "spread at start": [A.loc[2000, "sigma_log"], B.loc[2000, "sigma_log"], D.loc[2000, "sigma_log"],
+                        E.loc[2000, "sigma_log"], Spread03.loc[2003, "sigma_log"], Cx.loc[2003, "sigma_log"]],
+    "spread in 2024": [A.loc[2024, "sigma_log"], B.loc[2024, "sigma_log"], D.loc[2024, "sigma_log"],
+                       E.loc[2024, "sigma_log"], Spread03.loc[2024, "sigma_log"], Cx.loc[2024, "sigma_log"]],
+    "change %": [chg(A, 2000, 2024), chg(B, 2000, 2024), chg(D, 2000, 2024), chg(E, 2000, 2024),
+                 chg(Spread03, 2003, 2024), chg(Cx, 2003, 2024)],
+}).round(3)
+rob
+```
+
+
+```{python}
+#| label: robustness-euro
+raw_path = "data/raw_data/estat_nama_10r_2gdp.tsv"      # raw GDP file from Eurostat
+raw = pd.read_csv(raw_path, sep="\t", dtype=str)
+raw.columns = [c.strip() for c in raw.columns]
+first = raw.columns[0]
+dims = first.split("\\")[0].split(",")
+raw[dims] = raw[first].str.split(",", expand=True)
+eur = raw[raw["unit"] == "EUR_HAB"]
+eur = eur.drop(columns=[first]).melt(id_vars=dims, var_name="year", value_name="v")
+eur["year"] = eur["year"].str.strip().astype(int)
+eur["gdp_eur"] = pd.to_numeric(eur["v"].str.extract(r"([\d.]+)")[0], errors="coerce")
+eur = eur[["geo", "year", "gdp_eur"]].dropna()
+eur = eur.merge(gdp[["geo", "year"]], on=["geo", "year"])
+eur["log_gdp"] = np.log(eur["gdp_eur"])
+n_e = eur.groupby("geo")["year"].nunique()
+bal_e = n_e[n_e == 25].index
+AE = spread(eur.rename(columns={"gdp_eur": "gdp_pps"}))
+BE_ = spread(eur[eur["geo"].isin(bal_e)].rename(columns={"gdp_eur": "gdp_pps"}))
+print(f"Euro per head: A {chg(AE,2000,2024):+.1f}%  B {chg(BE_,2000,2024):+.1f}%  (PPS: A {chg(A,2000,2024):+.1f}%  B {chg(B,2000,2024):+.1f}%)")
+print(f"Spread B in euro: 2000 {BE_.loc[2000,'sigma_log']:.3f}, 2008 {BE_.loc[2008,'sigma_log']:.3f}, 2024 {BE_.loc[2024,'sigma_log']:.3f}")
+```
+The narrowing of the spread does not depend on the choices we tested. Removing the largest city regions makes the fall slightly larger (A −34%, B −28%), and starting in 2003 with Belgium included still gives a fall of 19%. Using euro per head instead of PPS gives a larger fall (A −42%, B −38%), because euro values do not adjust for the lower price levels in poorer regions. In euro, as in PPS, most of the fall happened before 2008 (about 66% in sample B). We use PPS as our main measure because it compares what incomes can buy.
+
+### Limitations of this analysis
+
+- Regions with gaps (Romania, Belgium and one French region) are not in sample B, and Romania is missing from sample A for 2002-2011. The result depends on the sample, which is why we show three.
+- The euro check uses the same regions and years as the PPS data and was not repeated for sample C or the 2003 start.
+- GDP per head is distorted in commuter regions: output is counted where people work, population where they live. We checked this by removing ten large city regions (AT13, BE10, DE60, DE30, CZ01, SK01, FR10, HU11, PL91, RO32). The spread still fell, slightly more than before (A −34%, B −28%). The list of cities is our own choice and was not based on a formal commuter measure, so smaller commuter effects remain possible.
+- The 2024 values are provisional and may be revised.
+- Sigma convergence measures how the spread changed. It does not show what caused the change.
+
+## Question 2: Do poorer regions grow faster?
+
+<!-- Owner: Bongolethu -->
+
+## Question 3: Which groups of regions behave alike?
+
+<!-- Owners: Badusha and Rethabile -->
+
+## Question 4: Where do the two convergence tests disagree?
+
+<!-- Owner: Winnie -->
+
+## Conclusion and limitations
+
+<!-- Whole team, after the questions above are finished. -->
+
+## Use of AI
+
+See `AI_Usage.md` for the prompts, the model and its settings, and the computational effort.
