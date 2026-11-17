@@ -231,7 +231,7 @@ The narrowing of the spread does not depend on the choices we tested. Removing t
 
 ## Question 2: Do poorer regions grow faster?
 
-<!-- Owner: Bongolethu -->
+<!-- Owner: Bhongolethu -->
 
 ## Question 3: Which groups of regions behave alike?
 
