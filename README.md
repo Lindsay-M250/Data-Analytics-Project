@@ -60,7 +60,7 @@ All data comes from Eurostat (open data). Every table was downloaded **unfiltere
 | Employment rate (by sex and age group) | `lfst_r_lfe2emprt` | NUTS2 | 1999-2025 | `data/raw_data/estat_lfst_r_lfe2emprt.tsv` |
 | Unemployment rate (by sex, age group, education) | `lfst_r_lfu3rt` | NUTS2 | 1999-2025 | `data/raw_data/estat_lfst_r_lfu3rt.tsv` |
 | Gross value added by sector | `nama_10r_3gva` | NUTS3 | 2000-2024 | `data/raw_data/estat_nama_10r_3gva.tsv` |
-| Population on 1 January | `demo_r_d2jan` | NUTS2 | 1990-2025 | **not downloaded yet** |
+| Population on 1 January | `demo_r_d2jan` | NUTS2 | 1990-2025 | `data/raw_data/estat_demo_r_d2jan.tsv` |
 
 - **Download date:** 17 October 2026. Eurostat revises its tables, so if a file is downloaded again, change the date here and say which file.
 - **Format:** the TSV files are wide (one column per year). Each value can carry a flag, for example `45.1 b`.
@@ -102,15 +102,29 @@ Every choice about the data is made by the whole group and written here with the
 | 5 | Sector grouping | 15 sector codes, some inside others | The six broad sectors that do not overlap: A, B-E, F, G-J, K-N, O-U. Shares of total gross value added (`TOTAL`) | These six add up to the total, so shares are consistent. The overlapping codes (for example C inside B-E) would count the same value twice | agreed |
 | 6 | Which countries | EU27 only (244 regions) or all 285 | EU27 only (244 regions) | Our question is about EU regions and EU cohesion funding. Turkey, Norway, Serbia, Albania, Montenegro and North Macedonia are not EU members | agreed |
 | 7 | Missing data | Drop regions with gaps, or keep and work around | Keep regions with a GDP value in both 2000 and 2024 and list how many we lose and which | Convergence tests compare the start and end of the period, so a region needs both | agreed |
+| 8 | Old region codes | Recode all, recode renames only, or leave as they are | Recode pure renames only (Slovenia SI01/SI02, the Netherlands NL31/NL33, nine Greek codes in population). Splits and merges are left as gaps | A rename is the same area, so the history can be joined safely. A split would need population weights or invented values | proposed |
+| 9 | Eurostat flags | Keep or drop | Keep, in a column next to each value | Flags such as `b` (break in series) and `p` (provisional) matter for what we trust | proposed |
+| 10 | One cleaning script | Rethabile's notebook or `clean_data.py` | `clean_data.py`, which includes all of his calculations | It starts from the raw files in the repo and produces the same values as his notebook, plus flags and region renames | proposed |
 
-## Processing log
+### Big city regions (commuter check, Question 1)
 
-One line every time we change or convert the data.
+GDP per head is distorted in commuter regions, because output is counted where people work and population where they live. For the robustness check we removed these ten regions:
 
-| Date | Who | What we did | Input | Output |
-|---|---|---|---|---|
-| 2026-10-17 | | Downloaded the unfiltered tables from Eurostat | Eurostat | `data/raw_data/` |
-| | | | | |
+| Code | Region |
+|---|---|
+| AT13 | Vienna |
+| BE10 | Brussels |
+| DE60 | Hamburg |
+| DE30 | Berlin |
+| CZ01 | Prague |
+| SK01 | Bratislava |
+| FR10 | Île-de-France (Paris) |
+| HU11 | Budapest |
+| PL91 | Warsaw area |
+| RO32 | Bucharest-Ilfov |
+
+Why: these are the capital and large city regions with the biggest commuter inflows. The list is our own choice, not based on a formal commuter measure. Everyone should use the same list when they check commuter effects. Result for Question 1: removing them makes the fall in spread slightly larger (sample A −34%, B −28%, against −31% and −26% with them).
+
 
 ## Limitations log
 
@@ -128,6 +142,12 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 - Sector data was incomplete for some region-years
 - Extra-regio ZZ regions are not real regions
 - NUTS-2 boundaries changed over time
+- Region splits and merges are not recoded (Hungary HU10, Lithuania LT00, Croatia HR04, Ireland IE01/IE02, Portugal PT16-18), so those regions have gaps in employment, youth unemployment and population.
+- NL31 -> NL35 and NL33 -> NL36 are treated as the same regions, although a few municipalities moved between them.
+- Only 224 of 244 regions have a GDP value in every year; the others are Romania (8), Belgium (11) and one French region.
+- Only 90 of 248 regions have youth unemployment in all 25 years.
+- GVA per head loses 388 region-years where no population value exists.
+
 
 ## Work split
 

@@ -1,0 +1,14 @@
+old_code,new_code,type
+SI01,SI03,rename
+SI02,SI04,rename
+NL31,NL35,near-rename
+NL33,NL36,near-rename
+EL11,EL51,rename
+EL12,EL52,rename
+EL13,EL53,rename
+EL14,EL61,rename
+EL21,EL54,rename
+EL22,EL62,rename
+EL23,EL63,rename
+EL24,EL64,rename
+EL25,EL65,rename
