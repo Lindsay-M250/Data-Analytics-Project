@@ -37,9 +37,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-path = "Project_gdp_EU27.csv"          # columns: geo, year, gdp_pc (PPS per head)
-gdp = pd.read_csv(path)
-gdp = gdp.rename(columns={"gdp_pc": "gdp_pps"})
+path = "data/clean/gdp.csv"          # columns: geo, year, gdp_pc (PPS per head)
+gdp = pd.read_csv("data/clean/gdp.csv")
 gdp["log_gdp"] = np.log(gdp["gdp_pps"])
 
 n_years = gdp.groupby("geo")["year"].nunique()
