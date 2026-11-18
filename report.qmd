@@ -230,7 +230,317 @@ The narrowing of the spread does not depend on the choices we tested. Removing t
 
 ## Question 2: Do poorer regions grow faster?
 
-<!-- Owner: Bhongolethu -->
+### Method: Beta-convergence
+
+We use beta-convergence to investigate whether poorer EU regions experienced faster economic growth than wealthier regions between 2000 and 2024.
+
+The analysis compares the initial GDP per capita of each region in 2000 with its average annual growth in GDP per capita over the period 2000-2024.
+
+GDP per capita is measured in purchasing power standards (PPS) to account for differences in price levels between countries.
+
+A negative relationship between initial GDP per capita and subsequent economic growth indicates beta-convergence. This would suggest that poorer regions grew faster than wealthier regions.
+
+```{python}
+#| label: q2-gdp-analysis
+#| fig-cap: "GDP beta-convergence across EU regions, 2000-2024"
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import linregress
+
+# 1. Load the cleaned GDP dataset
+gdp_q2 = pd.read_csv("data/clean/gdp.csv")
+
+# Ensure variables are numeric
+gdp_q2["year"] = pd.to_numeric(gdp_q2["year"], errors="coerce")
+gdp_q2["gdp_pps"] = pd.to_numeric(gdp_q2["gdp_pps"], errors="coerce")
+
+# 2. Select the beginning and end of the study period
+gdp_period = gdp_q2[
+    gdp_q2["year"].isin([2000, 2024])
+].copy()
+
+# 3. Arrange data so each region has one row
+gdp_wide = gdp_period.pivot(
+    index="geo",
+    columns="year",
+    values="gdp_pps"
+)
+
+# Keep regions with observations in both years
+gdp_wide = gdp_wide.dropna(subset=[2000, 2024])
+
+# Remove invalid or non-positive GDP observations
+gdp_wide = gdp_wide[
+    (gdp_wide[2000] > 0) &
+    (gdp_wide[2024] > 0)
+].copy()
+
+# 4. Calculate initial GDP and annual economic growth
+gdp_wide["initial_log_gdp"] = np.log(gdp_wide[2000])
+
+gdp_wide["annual_growth"] = (
+    np.log(gdp_wide[2024]) -
+    np.log(gdp_wide[2000])
+) / 24
+
+gdp_wide["growth_percent"] = (
+    (gdp_wide[2024] / gdp_wide[2000]) ** (1 / 24) - 1
+) * 100
+
+# 5. Run beta-convergence regression
+gdp_model = linregress(
+    gdp_wide["initial_log_gdp"],
+    gdp_wide["annual_growth"]
+)
+
+# 6. Display regression results
+print("GDP BETA-CONVERGENCE RESULTS")
+print("=" * 40)
+
+print("Number of regions:", len(gdp_wide))
+print("Regression coefficient:", round(gdp_model.slope, 5))
+print("R-squared:", round(gdp_model.rvalue ** 2, 3))
+print("P-value:", f"{gdp_model.pvalue:.4g}")
+
+if gdp_model.slope < 0 and gdp_model.pvalue < 0.05:
+    print("Conclusion: Evidence of beta-convergence.")
+else:
+    print("Conclusion: No statistically significant evidence of beta-convergence.")
+
+# 7. Compare growth across initial-income groups
+gdp_wide["income_group"] = pd.qcut(
+    gdp_wide[2000],
+    q=4,
+    labels=["Poorest", "Lower-middle", "Upper-middle", "Richest"]
+)
+
+quartile_results = gdp_wide.groupby(
+    "income_group",
+    observed=True
+)["growth_percent"].mean()
+
+print("\nAVERAGE ANNUAL GDP GROWTH BY INITIAL INCOME")
+print(quartile_results.round(2))
+
+# 8. Create scatter plot and regression line
+plt.figure(figsize=(9, 6))
+
+plt.scatter(
+    gdp_wide["initial_log_gdp"],
+    gdp_wide["annual_growth"] * 100,
+    alpha=0.7
+)
+
+x = np.linspace(
+    gdp_wide["initial_log_gdp"].min(),
+    gdp_wide["initial_log_gdp"].max(),
+    100
+)
+
+y = (
+    gdp_model.intercept +
+    gdp_model.slope * x
+) * 100
+
+plt.plot(x, y, linewidth=2)
+
+plt.xlabel("Initial log GDP per capita (2000)")
+plt.ylabel("Average annual GDP growth (%)")
+plt.title("GDP beta-convergence across EU regions, 2000-2024")
+plt.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: q2-emp-analysis
+#| fig-cap: "Employment convergence across EU regions, 2000-2024"
+
+# Employment convergence: 2000-2024
+
+emp = pd.read_csv("data/clean/emp.csv")
+
+# Select initial and final employment rates
+emp_period = emp[emp["year"].isin([2000, 2024])]
+
+emp_wide = emp_period.pivot(
+    index="geo",
+    columns="year",
+    values="emp_rate"
+).dropna(subset=[2000, 2024])
+
+# Calculate percentage-point change
+emp_wide["employment_change"] = (
+    emp_wide[2024] - emp_wide[2000]
+)
+
+# Regression: initial employment rate vs change
+emp_model = linregress(
+    emp_wide[2000],
+    emp_wide["employment_change"]
+)
+
+print("EMPLOYMENT CONVERGENCE RESULTS")
+print("------------------------------")
+print("Number of regions:", len(emp_wide))
+print("Regression coefficient:", round(emp_model.slope, 4))
+print("R-squared:", round(emp_model.rvalue**2, 3))
+print("P-value:", emp_model.pvalue)
+
+# Scatter plot
+plt.figure(figsize=(9, 6))
+
+plt.scatter(
+    emp_wide[2000],
+    emp_wide["employment_change"]
+)
+
+x = np.linspace(
+    emp_wide[2000].min(),
+    emp_wide[2000].max(),
+    100
+)
+
+plt.plot(
+    x,
+    emp_model.intercept + emp_model.slope * x
+)
+
+plt.xlabel("Initial employment rate (2000), ages 20-64 (%)")
+plt.ylabel("Change in employment rate (percentage points)")
+plt.title("Employment convergence across EU regions, 2000-2024")
+
+plt.tight_layout()
+plt.show()
+```
+
+### Results and interpretation
+
+The results provide evidence of beta-convergence across EU regions between 2000 and 2024. The regression analysis shows a negative relationship between initial GDP per capita and subsequent economic growth. The regression coefficient is approximately -0.01988, with an R-squared of 0.547. The relationship is statistically significant (p < 0.001).
+
+This suggests that regions with lower initial GDP per capita generally experienced faster economic growth than regions that were initially wealthier. The comparison between the poorest and richest quarters supports this finding. The poorest quarter recorded average annual GDP growth of approximately 5.20%, compared with 2.81% for the richest quarter.
+
+The employment analysis provides additional evidence of convergence. Across the 199 regions with employment data for both 2000 and 2024, the regression coefficient is approximately -0.3433. This indicates that regions with lower initial employment rates generally experienced larger improvements in employment. The poorest-performing quarter in terms of initial employment rates recorded an average increase of 13.44 percentage points, compared with 6.81 percentage points for the highest quarter.
+
+Overall, the findings suggest that poorer EU regions experienced faster economic growth and that regions with initially lower employment rates made greater improvements in employment. However, the results do not establish that lower initial income causes faster growth. They demonstrate an association between initial regional conditions and subsequent changes.
+
+### Robustness Check: Alternative Employment Age Group (15–64)
+
+```{python}
+#| label: q2-robustness-comparison
+
+# --- Rebuild the two datasets so this chunk runs on its own ---
+
+# 1. Employment 20-64 (your main analysis)
+emp_main = pd.read_csv("data/clean/emp.csv")
+emp_main = emp_main[emp_main["year"].isin([2000, 2024])]
+
+results_20_64 = emp_main.pivot(
+    index="geo",
+    columns="year",
+    values="emp_rate"
+).dropna(subset=[2000, 2024]).copy()
+
+results_20_64["change"] = results_20_64[2024] - results_20_64[2000]
+
+# 2. Employment 15-64 (robustness check)
+# Try a separate file first, otherwise use emp.csv if it has an age column
+try:
+    emp_alt = pd.read_csv("data/clean/emp_15_64.csv")
+except FileNotFoundError:
+    emp_alt = pd.read_csv("data/clean/emp.csv")
+    if "age_group" in emp_alt.columns:
+        emp_alt = emp_alt[emp_alt["age_group"] == "15-64"]
+
+emp_alt = emp_alt[emp_alt["year"].isin([2000, 2024])]
+
+results_15_64 = emp_alt.pivot(
+    index="geo",
+    columns="year",
+    values="emp_rate"
+).dropna(subset=[2000, 2024]).copy()
+
+results_15_64["change"] = results_15_64[2024] - results_15_64[2000]
+
+# --- Your robustness code starts here ---
+
+# Use the same regions for both age groups
+common_regions = results_20_64.index.intersection(
+    results_15_64.index
+)
+
+# Create comparable datasets
+robust_20_64 = results_20_64.loc[common_regions].copy()
+robust_15_64 = results_15_64.loc[common_regions].copy()
+
+# Run regressions using identical regional samples
+model_20_64_robust = linregress(
+    robust_20_64[2000],
+    robust_20_64["change"]
+)
+
+model_15_64_robust = linregress(
+    robust_15_64[2000],
+    robust_15_64["change"]
+)
+
+# Display comparison
+robustness_table = pd.DataFrame({
+    "Age group": ["20-64", "15-64"],
+    "Number of regions": [
+        len(common_regions),
+        len(common_regions)
+    ],
+    "Coefficient": [
+        model_20_64_robust.slope,
+        model_15_64_robust.slope
+    ],
+    "R-squared": [
+        model_20_64_robust.rvalue ** 2,
+        model_15_64_robust.rvalue ** 2
+    ],
+    "P-value": [
+        model_20_64_robust.pvalue,
+        model_15_64_robust.pvalue
+    ]
+})
+
+print("ROBUSTNESS CHECK: AGE GROUP COMPARISON")
+print("=" * 55)
+print(robustness_table.to_string(index=False))
+
+# Determine whether the convergence conclusion changes
+if (
+    model_20_64_robust.slope < 0
+    and model_20_64_robust.pvalue < 0.05
+    and model_15_64_robust.slope < 0
+    and model_15_64_robust.pvalue < 0.05
+):
+    print("\nConclusion: Convergence remains under both age definitions.")
+
+elif (
+    model_20_64_robust.slope < 0
+    and model_20_64_robust.pvalue < 0.05
+):
+    print("\nConclusion: The convergence finding is sensitive to age-group selection.")
+
+else:
+    print("\nConclusion: The original convergence finding requires further investigation.")
+```
+
+### Limitations of this analysis
+
+- Different regional samples for GDP and employment;
+The GDP and employment analyses do not contain exactly the same number of regions because data availability differs between the two indicators. This limits direct comparisons between economic growth and employment improvements. The results should therefore be interpreted as separate measures of regional convergence.
+
+- Correlation does not establish causation;
+The regression analysis identifies a relationship between initial regional GDP per capita and subsequent economic growth. However, it does not establish that being poorer causes a region to grow faster. Other factors, such as investment, infrastructure, industrial structure, education and government policies, may also influence regional economic performance.
+
+- Limited observation period;
+The analysis compares the beginning and end of the 2000–2024 period. Although this provides an overview of long-term changes, it does not fully capture economic fluctuations, financial crises, the COVID-19 pandemic or other events that may have affected individual regions during the period.
 
 ## Question 3: Which groups of regions behave alike?
 
