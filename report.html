@@ -2232,6 +2232,7 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a>
   <ul class="collapse">
   <li><a href="#gdp-per-head" id="toc-gdp-per-head" class="nav-link" data-scroll-target="#gdp-per-head">GDP per head</a></li>
+  <li><a href="#employment-rate" id="toc-employment-rate" class="nav-link" data-scroll-target="#employment-rate">Employment rate</a></li>
   </ul></li>
   <li><a href="#question-1-is-the-gap-between-regions-narrowing" id="toc-question-1-is-the-gap-between-regions-narrowing" class="nav-link" data-scroll-target="#question-1-is-the-gap-between-regions-narrowing">Question 1: Is the gap between regions narrowing?</a>
   <ul class="collapse">
@@ -2246,6 +2247,7 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
   <ul class="collapse">
   <li><a href="#method-beta-convergence" id="toc-method-beta-convergence" class="nav-link" data-scroll-target="#method-beta-convergence">Method: Beta-convergence</a></li>
   <li><a href="#results-and-interpretation" id="toc-results-and-interpretation" class="nav-link" data-scroll-target="#results-and-interpretation">Results and interpretation</a></li>
+  <li><a href="#robustness-check-alternative-employment-age-group-1564" id="toc-robustness-check-alternative-employment-age-group-1564" class="nav-link" data-scroll-target="#robustness-check-alternative-employment-age-group-1564">Robustness Check: Alternative Employment Age Group (15–64)</a></li>
   <li><a href="#limitations-of-this-analysis-1" id="toc-limitations-of-this-analysis-1" class="nav-link" data-scroll-target="#limitations-of-this-analysis-1">Limitations of this analysis</a></li>
   </ul></li>
   <li><a href="#question-3-which-groups-of-regions-behave-alike" id="toc-question-3-which-groups-of-regions-behave-alike" class="nav-link" data-scroll-target="#question-3-which-groups-of-regions-behave-alike">Question 3: Which groups of regions behave alike?</a></li>
@@ -2294,7 +2296,39 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 <section id="gdp-per-head" class="level3">
 <h3 class="anchored" data-anchor-id="gdp-per-head">GDP per head</h3>
 <p>GDP per head comes from Eurostat table <code>nama_10r_2gdp</code>, in purchasing power standards (PPS, <code>PPS_EU27_2020_HAB</code>), for EU27 NUTS2 regions, 2000-2024. Extra-regio territories and non-EU countries were removed, which leaves 244 regions. PPS adjusts for price differences between countries, so it compares what incomes can buy and not only their size in euro. The 2024 values are provisional.</p>
-<!-- Other table owners: add one short paragraph for your own table here (employment, youth unemployment, population, sector GVA). -->
+</section>
+<section id="employment-rate" class="level3">
+<h3 class="anchored" data-anchor-id="employment-rate">Employment rate</h3>
+<p>Employment rates come from Eurostat table <code>lfst_r_lfe2emprt</code>: the share of people who are in work, both sexes, in percent, for EU27 NUTS2 regions, 2000-2024. The main measure covers ages 20-64, the age group of the EU employment target. As a robustness check for Question 2 we repeat the analysis for ages 15-64 (<code>Y15-64</code>), taken from the same raw file with the same filters, so the two measures differ only in the age group. Extra-regio territories and non-EU countries were removed, and Slovenian and Dutch regions that were only renamed were joined to their new codes. Regions that were split or merged are not recoded. This is why the employment file has more region codes than the GDP file: the extra codes are old regions (HR04, HU10, IE01, IE02, LT00, PT16-PT18). Question 2 uses the regions that have an employment rate in both 2000 and 2024. Some of these values carry Eurostat flags, mostly for a break in the series or a different definition in 2024. The numbers below come from the cleaned files:</p>
+<div id="emp-data-check" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>emp_chk <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/emp.csv&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>gdp_chk <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/gdp.csv&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> both_years(df, col):</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> df[df[<span class="st">&quot;year&quot;</span>].isin([<span class="dv">2000</span>, <span class="dv">2024</span>])].pivot(index<span class="op">=</span><span class="st">&quot;geo&quot;</span>, columns<span class="op">=</span><span class="st">&quot;year&quot;</span>, values<span class="op">=</span>col)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> w.dropna(subset<span class="op">=</span>[<span class="dv">2000</span>, <span class="dv">2024</span>]).index</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>emp_both <span class="op">=</span> both_years(emp_chk, <span class="st">&quot;emp_rate&quot;</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>gdp_both <span class="op">=</span> both_years(gdp_chk, <span class="st">&quot;gdp_pps&quot;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>flag_2024 <span class="op">=</span> emp_chk[(emp_chk[<span class="st">&quot;year&quot;</span>] <span class="op">==</span> <span class="dv">2024</span>) <span class="op">&amp;</span> emp_chk[<span class="st">&quot;geo&quot;</span>].isin(emp_both)][<span class="st">&quot;emp_rate_flag&quot;</span>].fillna(<span class="st">&quot;&quot;</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Region codes: employment file </span><span class="sc">{</span>emp_chk[<span class="st">&#39;geo&#39;</span>]<span class="sc">.</span>nunique()<span class="sc">}</span><span class="ss">, GDP file </span><span class="sc">{</span>gdp_chk[<span class="st">&#39;geo&#39;</span>]<span class="sc">.</span>nunique()<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;In the employment file but not in the GDP file: </span><span class="sc">{</span><span class="bu">sorted</span>(<span class="bu">set</span>(emp_chk[<span class="st">&#39;geo&#39;</span>]) <span class="op">-</span> <span class="bu">set</span>(gdp_chk[<span class="st">&#39;geo&#39;</span>]))<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Regions with an employment rate in 2000 and 2024: </span><span class="sc">{</span><span class="bu">len</span>(emp_both)<span class="sc">}</span><span class="ss"> (also with GDP in both years: </span><span class="sc">{</span><span class="bu">len</span>(emp_both.intersection(gdp_both))<span class="sc">}</span><span class="ss">)&quot;</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;2024 values flagged as break in series (b) or different definition (d): </span><span class="sc">{</span>flag_2024<span class="sc">.</span><span class="bu">str</span><span class="sc">.</span>contains(<span class="st">&#39;[bd]&#39;</span>)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss"> of </span><span class="sc">{</span><span class="bu">len</span>(flag_2024)<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Region codes: employment file 252, GDP file 244
+In the employment file but not in the GDP file: [&#39;HR04&#39;, &#39;HU10&#39;, &#39;IE01&#39;, &#39;IE02&#39;, &#39;LT00&#39;, &#39;PT16&#39;, &#39;PT17&#39;, &#39;PT18&#39;]
+Regions with an employment rate in 2000 and 2024: 199 (also with GDP in both years: 188)
+2024 values flagged as break in series (b) or different definition (d): 42 of 199</code></pre>
+</div>
+</div>
+<!-- Other table owners: add one short paragraph for your own table here (youth unemployment, population, sector GVA). -->
 </section>
 </section>
 <section id="question-1-is-the-gap-between-regions-narrowing" class="level2">
@@ -2305,55 +2339,55 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 </section>
 <section id="data-and-sample" class="level3">
 <h3 class="anchored" data-anchor-id="data-and-sample">Data and sample</h3>
-<div id="setup" class="cell" data-execution_count="1">
+<div id="setup" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> <span class="st">&quot;data/clean/gdp.csv&quot;</span>          <span class="co"># columns: geo, year, gdp_pc (PPS per head)</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>gdp <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/gdp.csv&quot;</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>gdp[<span class="st">&quot;log_gdp&quot;</span>] <span class="op">=</span> np.log(gdp[<span class="st">&quot;gdp_pps&quot;</span>])</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>n_years <span class="op">=</span> gdp.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].nunique()</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>balanced <span class="op">=</span> n_years[n_years <span class="op">==</span> <span class="dv">25</span>].index          <span class="co"># regions with a value in every year 2000-2024</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> spread(df):</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> df.groupby(<span class="st">&quot;year&quot;</span>)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pd.DataFrame({</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;regions&quot;</span>: g[<span class="st">&quot;geo&quot;</span>].nunique(),</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;sigma_log&quot;</span>: g[<span class="st">&quot;log_gdp&quot;</span>].std(),                   <span class="co"># std. deviation of log GDP per head</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;cv&quot;</span>: g[<span class="st">&quot;gdp_pps&quot;</span>].std() <span class="op">/</span> g[<span class="st">&quot;gdp_pps&quot;</span>].mean(),    <span class="co"># coefficient of variation</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> spread(gdp)                                           <span class="co"># A: every region with a value that year</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> spread(gdp[gdp[<span class="st">&quot;geo&quot;</span>].isin(balanced)])                <span class="co"># B: only regions with all 25 years</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> spread(gdp[<span class="op">~</span>gdp[<span class="st">&quot;geo&quot;</span>].<span class="bu">str</span>.startswith(<span class="st">&quot;RO&quot;</span>)])         <span class="co"># C: sample A without Romania</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> <span class="st">&quot;data/clean/gdp.csv&quot;</span>          <span class="co"># columns: geo, year, gdp_pc (PPS per head)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>gdp <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/gdp.csv&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>gdp[<span class="st">&quot;log_gdp&quot;</span>] <span class="op">=</span> np.log(gdp[<span class="st">&quot;gdp_pps&quot;</span>])</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>n_years <span class="op">=</span> gdp.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].nunique()</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>balanced <span class="op">=</span> n_years[n_years <span class="op">==</span> <span class="dv">25</span>].index          <span class="co"># regions with a value in every year 2000-2024</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> spread(df):</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> df.groupby(<span class="st">&quot;year&quot;</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pd.DataFrame({</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;regions&quot;</span>: g[<span class="st">&quot;geo&quot;</span>].nunique(),</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;sigma_log&quot;</span>: g[<span class="st">&quot;log_gdp&quot;</span>].std(),                   <span class="co"># std. deviation of log GDP per head</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;cv&quot;</span>: g[<span class="st">&quot;gdp_pps&quot;</span>].std() <span class="op">/</span> g[<span class="st">&quot;gdp_pps&quot;</span>].mean(),    <span class="co"># coefficient of variation</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> spread(gdp)                                           <span class="co"># A: every region with a value that year</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> spread(gdp[gdp[<span class="st">&quot;geo&quot;</span>].isin(balanced)])                <span class="co"># B: only regions with all 25 years</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> spread(gdp[<span class="op">~</span>gdp[<span class="st">&quot;geo&quot;</span>].<span class="bu">str</span>.startswith(<span class="st">&quot;RO&quot;</span>)])         <span class="co"># C: sample A without Romania</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>The GDP file has 244 regions, but not all of them have a value in every year. Table 1 lists the regions with gaps.</p>
-<div class="cell" data-execution_count="2">
+<div class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>span <span class="op">=</span> gdp.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].agg(first_year<span class="op">=</span><span class="st">&quot;min&quot;</span>, last_year<span class="op">=</span><span class="st">&quot;max&quot;</span>, years_with_data<span class="op">=</span><span class="st">&quot;count&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>span[<span class="st">&quot;country&quot;</span>] <span class="op">=</span> span.index.<span class="bu">str</span>[:<span class="dv">2</span>]</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>gaps <span class="op">=</span> span[span[<span class="st">&quot;years_with_data&quot;</span>] <span class="op">&lt;</span> <span class="dv">25</span>]</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>names <span class="op">=</span> {<span class="st">&quot;BE&quot;</span>: <span class="st">&quot;Belgium&quot;</span>, <span class="st">&quot;FR&quot;</span>: <span class="st">&quot;France&quot;</span>, <span class="st">&quot;RO&quot;</span>: <span class="st">&quot;Romania&quot;</span>}</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>gaps_by_country <span class="op">=</span> gaps.groupby(<span class="st">&quot;country&quot;</span>).agg(</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    regions<span class="op">=</span>(<span class="st">&quot;first_year&quot;</span>, <span class="st">&quot;size&quot;</span>),</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    first_year_with_data<span class="op">=</span>(<span class="st">&quot;first_year&quot;</span>, <span class="st">&quot;min&quot;</span>),</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    fewest_years_with_data<span class="op">=</span>(<span class="st">&quot;years_with_data&quot;</span>, <span class="st">&quot;min&quot;</span>))</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>gaps_by_country.index <span class="op">=</span> [names.get(c, c) <span class="cf">for</span> c <span class="kw">in</span> gaps_by_country.index]</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>gaps_by_country</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>span <span class="op">=</span> gdp.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].agg(first_year<span class="op">=</span><span class="st">&quot;min&quot;</span>, last_year<span class="op">=</span><span class="st">&quot;max&quot;</span>, years_with_data<span class="op">=</span><span class="st">&quot;count&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>span[<span class="st">&quot;country&quot;</span>] <span class="op">=</span> span.index.<span class="bu">str</span>[:<span class="dv">2</span>]</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>gaps <span class="op">=</span> span[span[<span class="st">&quot;years_with_data&quot;</span>] <span class="op">&lt;</span> <span class="dv">25</span>]</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>names <span class="op">=</span> {<span class="st">&quot;BE&quot;</span>: <span class="st">&quot;Belgium&quot;</span>, <span class="st">&quot;FR&quot;</span>: <span class="st">&quot;France&quot;</span>, <span class="st">&quot;RO&quot;</span>: <span class="st">&quot;Romania&quot;</span>}</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>gaps_by_country <span class="op">=</span> gaps.groupby(<span class="st">&quot;country&quot;</span>).agg(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    regions<span class="op">=</span>(<span class="st">&quot;first_year&quot;</span>, <span class="st">&quot;size&quot;</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    first_year_with_data<span class="op">=</span>(<span class="st">&quot;first_year&quot;</span>, <span class="st">&quot;min&quot;</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    fewest_years_with_data<span class="op">=</span>(<span class="st">&quot;years_with_data&quot;</span>, <span class="st">&quot;min&quot;</span>))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>gaps_by_country.index <span class="op">=</span> [names.get(c, c) <span class="cf">for</span> c <span class="kw">in</span> gaps_by_country.index]</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>gaps_by_country</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="tbl-gaps" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="2">
+<div id="tbl-gaps" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-gaps-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Table 1: Regions without a GDP value in every year 2000-2024, by country
 </figcaption>
 <div aria-describedby="tbl-gaps-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="cell-output cell-output-display" data-execution_count="2">
+<div class="cell-output cell-output-display" data-execution_count="3">
 <div>
 
 
@@ -2403,25 +2437,25 @@ Table 1: Regions without a GDP value in every year 2000-2024, by country
 </section>
 <section id="results" class="level3">
 <h3 class="anchored" data-anchor-id="results">Results</h3>
-<div class="cell" data-execution_count="3">
+<div class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>years <span class="op">=</span> [<span class="dv">2000</span>, <span class="dv">2001</span>, <span class="dv">2002</span>, <span class="dv">2003</span>, <span class="dv">2008</span>, <span class="dv">2011</span>, <span class="dv">2012</span>, <span class="dv">2019</span>, <span class="dv">2024</span>]</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>table <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;A regions&quot;</span>: A.loc[years, <span class="st">&quot;regions&quot;</span>], <span class="st">&quot;A spread&quot;</span>: A.loc[years, <span class="st">&quot;sigma_log&quot;</span>],</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;C regions&quot;</span>: C.loc[years, <span class="st">&quot;regions&quot;</span>], <span class="st">&quot;C spread&quot;</span>: C.loc[years, <span class="st">&quot;sigma_log&quot;</span>],</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;B regions&quot;</span>: B.loc[years, <span class="st">&quot;regions&quot;</span>], <span class="st">&quot;B spread&quot;</span>: B.loc[years, <span class="st">&quot;sigma_log&quot;</span>],</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}).<span class="bu">round</span>(<span class="dv">3</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>table.index.name <span class="op">=</span> <span class="st">&quot;Year&quot;</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>years <span class="op">=</span> [<span class="dv">2000</span>, <span class="dv">2001</span>, <span class="dv">2002</span>, <span class="dv">2003</span>, <span class="dv">2008</span>, <span class="dv">2011</span>, <span class="dv">2012</span>, <span class="dv">2019</span>, <span class="dv">2024</span>]</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>table <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;A regions&quot;</span>: A.loc[years, <span class="st">&quot;regions&quot;</span>], <span class="st">&quot;A spread&quot;</span>: A.loc[years, <span class="st">&quot;sigma_log&quot;</span>],</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;C regions&quot;</span>: C.loc[years, <span class="st">&quot;regions&quot;</span>], <span class="st">&quot;C spread&quot;</span>: C.loc[years, <span class="st">&quot;sigma_log&quot;</span>],</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;B regions&quot;</span>: B.loc[years, <span class="st">&quot;regions&quot;</span>], <span class="st">&quot;B spread&quot;</span>: B.loc[years, <span class="st">&quot;sigma_log&quot;</span>],</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>}).<span class="bu">round</span>(<span class="dv">3</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>table.index.name <span class="op">=</span> <span class="st">&quot;Year&quot;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="tbl-years" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
+<div id="tbl-years" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="4">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-years-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Table 2: Number of regions and spread of log GDP per head in selected years (A: all available, C: A without Romania, B: regions with every year)
 </figcaption>
 <div aria-describedby="tbl-years-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="cell-output cell-output-display" data-execution_count="3">
+<div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 
 
@@ -2537,27 +2571,27 @@ Table 2: Number of regions and spread of log GDP per head in selected years (A:
 </figure>
 </div>
 </div>
-<div id="cell-fig-sigma" class="cell" data-execution_count="4">
+<div id="cell-fig-sigma" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">7</span>), sharex<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                               gridspec_kw<span class="op">=</span>{<span class="st">&quot;height_ratios&quot;</span>: [<span class="dv">3</span>, <span class="dv">1</span>]})</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>ax1.plot(A.index, A[<span class="st">&quot;sigma_log&quot;</span>], <span class="st">&quot;o-&quot;</span>, label<span class="op">=</span><span class="st">&quot;A: all regions available each year&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>ax1.plot(C.index, C[<span class="st">&quot;sigma_log&quot;</span>], <span class="st">&quot;^--&quot;</span>, label<span class="op">=</span><span class="st">&quot;C: sample A without Romania&quot;</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>ax1.plot(B.index, B[<span class="st">&quot;sigma_log&quot;</span>], <span class="st">&quot;s-&quot;</span>, label<span class="op">=</span><span class="ss">f&quot;B: </span><span class="sc">{</span><span class="bu">len</span>(balanced)<span class="sc">}</span><span class="ss"> regions with every year&quot;</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>ax1.axvspan(<span class="fl">2001.5</span>, <span class="fl">2011.5</span>, color<span class="op">=</span><span class="st">&quot;grey&quot;</span>, alpha<span class="op">=</span><span class="fl">0.12</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>ax1.text(<span class="fl">2006.5</span>, ax1.get_ylim()[<span class="dv">1</span>], <span class="st">&quot;Romania&#39;s 8 regions have</span><span class="ch">\n</span><span class="st">no GDP data 2002-2011&quot;</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>         ha<span class="op">=</span><span class="st">&quot;center&quot;</span>, va<span class="op">=</span><span class="st">&quot;top&quot;</span>, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">&quot;Std. deviation of log GDP per head (PPS)&quot;</span>)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>ax1.legend(loc<span class="op">=</span><span class="st">&quot;upper right&quot;</span>, bbox_to_anchor<span class="op">=</span>(<span class="dv">1</span>, <span class="fl">0.88</span>))</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>ax1.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>ax2.step(A.index, A[<span class="st">&quot;regions&quot;</span>], where<span class="op">=</span><span class="st">&quot;mid&quot;</span>)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>ax2.axvspan(<span class="fl">2001.5</span>, <span class="fl">2011.5</span>, color<span class="op">=</span><span class="st">&quot;grey&quot;</span>, alpha<span class="op">=</span><span class="fl">0.12</span>)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">&quot;Regions in A&quot;</span>)</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>ax2.set_xlabel(<span class="st">&quot;Year&quot;</span>)</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>ax2.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">7</span>), sharex<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                               gridspec_kw<span class="op">=</span>{<span class="st">&quot;height_ratios&quot;</span>: [<span class="dv">3</span>, <span class="dv">1</span>]})</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ax1.plot(A.index, A[<span class="st">&quot;sigma_log&quot;</span>], <span class="st">&quot;o-&quot;</span>, label<span class="op">=</span><span class="st">&quot;A: all regions available each year&quot;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>ax1.plot(C.index, C[<span class="st">&quot;sigma_log&quot;</span>], <span class="st">&quot;^--&quot;</span>, label<span class="op">=</span><span class="st">&quot;C: sample A without Romania&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ax1.plot(B.index, B[<span class="st">&quot;sigma_log&quot;</span>], <span class="st">&quot;s-&quot;</span>, label<span class="op">=</span><span class="ss">f&quot;B: </span><span class="sc">{</span><span class="bu">len</span>(balanced)<span class="sc">}</span><span class="ss"> regions with every year&quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>ax1.axvspan(<span class="fl">2001.5</span>, <span class="fl">2011.5</span>, color<span class="op">=</span><span class="st">&quot;grey&quot;</span>, alpha<span class="op">=</span><span class="fl">0.12</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>ax1.text(<span class="fl">2006.5</span>, ax1.get_ylim()[<span class="dv">1</span>], <span class="st">&quot;Romania&#39;s 8 regions have</span><span class="ch">\n</span><span class="st">no GDP data 2002-2011&quot;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>         ha<span class="op">=</span><span class="st">&quot;center&quot;</span>, va<span class="op">=</span><span class="st">&quot;top&quot;</span>, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">&quot;Std. deviation of log GDP per head (PPS)&quot;</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>ax1.legend(loc<span class="op">=</span><span class="st">&quot;upper right&quot;</span>, bbox_to_anchor<span class="op">=</span>(<span class="dv">1</span>, <span class="fl">0.88</span>))</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>ax1.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>ax2.step(A.index, A[<span class="st">&quot;regions&quot;</span>], where<span class="op">=</span><span class="st">&quot;mid&quot;</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>ax2.axvspan(<span class="fl">2001.5</span>, <span class="fl">2011.5</span>, color<span class="op">=</span><span class="st">&quot;grey&quot;</span>, alpha<span class="op">=</span><span class="fl">0.12</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">&quot;Regions in A&quot;</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>ax2.set_xlabel(<span class="st">&quot;Year&quot;</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>ax2.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-display">
 <div id="fig-sigma" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -2573,34 +2607,34 @@ Figure 1: Spread of GDP per head across EU regions, 2000-2024. The lower panel 
 </div>
 </div>
 <p>The numbers quoted in the text below come from this code, so they can be checked:</p>
-<div id="numbers" class="cell" data-execution_count="5">
+<div id="numbers" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pct(S, col): <span class="cf">return</span> (S.loc[<span class="dv">2024</span>, col] <span class="op">/</span> S.loc[<span class="dv">2000</span>, col] <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> <span class="dv">100</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change in spread 2000-2024 (log):  A </span><span class="sc">{</span>pct(A,<span class="st">&#39;sigma_log&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%   B </span><span class="sc">{</span>pct(B,<span class="st">&#39;sigma_log&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%&quot;</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change in coefficient of variation: A </span><span class="sc">{</span>pct(A,<span class="st">&#39;cv&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%   B </span><span class="sc">{</span>pct(B,<span class="st">&#39;cv&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%&quot;</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>total_fall <span class="op">=</span> B.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> B.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>fall_2008 <span class="op">=</span> B.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> B.loc[<span class="dv">2008</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="ss">Sample B: spread </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss"> (2000), </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2008</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss"> (2008), </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss"> (2024)&quot;</span>)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Total fall </span><span class="sc">{</span>total_fall<span class="sc">:.3f}</span><span class="ss">; fall by 2008 </span><span class="sc">{</span>fall_2008<span class="sc">:.3f}</span><span class="ss"> = </span><span class="sc">{</span>fall_2008<span class="op">/</span>total_fall<span class="op">*</span><span class="dv">100</span><span class="sc">:.0f}</span><span class="ss">% of the total&quot;</span>)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Pace per year: 2000-2008 </span><span class="sc">{</span>fall_2008<span class="op">/</span><span class="dv">8</span><span class="sc">:.4f}</span><span class="ss"> | 2008-2024 </span><span class="sc">{</span>(B.loc[<span class="dv">2008</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>B.loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>])<span class="op">/</span><span class="dv">16</span><span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change 2019 to 2020 in B: </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2020</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>B<span class="sc">.</span>loc[<span class="dv">2019</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:+.3f}</span><span class="ss">&quot;</span>)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>drop_A <span class="op">=</span> A.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> A.loc[<span class="dv">2002</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>drop_C <span class="op">=</span> C.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> C.loc[<span class="dv">2002</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="ss">Drop 2000 to 2002: A </span><span class="sc">{</span>drop_A<span class="sc">:.3f}</span><span class="ss">, C (no Romania) </span><span class="sc">{</span>drop_C<span class="sc">:.3f}</span><span class="ss">; share caused by Romania </span><span class="sc">{</span>(drop_A<span class="op">-</span>drop_C)<span class="op">/</span>drop_A<span class="op">*</span><span class="dv">100</span><span class="sc">:.0f}</span><span class="ss">%&quot;</span>)</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change 2011 to 2012: A </span><span class="sc">{</span>A<span class="sc">.</span>loc[<span class="dv">2012</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>A<span class="sc">.</span>loc[<span class="dv">2011</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:+.3f}</span><span class="ss">, C </span><span class="sc">{</span>C<span class="sc">.</span>loc[<span class="dv">2012</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>C<span class="sc">.</span>loc[<span class="dv">2011</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:+.3f}</span><span class="ss">&quot;</span>)</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Romania adds to the spread: 2000 </span><span class="sc">{</span>A<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>C<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">, 2024 </span><span class="sc">{</span>A<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>C<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">&quot;</span>)</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> y <span class="kw">in</span> (<span class="dv">2001</span>, <span class="dv">2024</span>):</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> gdp[gdp[<span class="st">&quot;year&quot;</span>] <span class="op">==</span> y].copy()</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">&quot;rank&quot;</span>] <span class="op">=</span> d[<span class="st">&quot;gdp_pps&quot;</span>].rank(method<span class="op">=</span><span class="st">&quot;first&quot;</span>)          <span class="co"># 1 = poorest</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    ro <span class="op">=</span> d[d[<span class="st">&quot;geo&quot;</span>].<span class="bu">str</span>.startswith(<span class="st">&quot;RO&quot;</span>)]</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="sc">{</span>y<span class="sc">}</span><span class="ss">: Romanian regions among the 12 poorest: </span><span class="sc">{</span>(ro[<span class="st">&#39;rank&#39;</span>] <span class="op">&lt;=</span> <span class="dv">12</span>)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss"> of </span><span class="sc">{</span><span class="bu">len</span>(ro)<span class="sc">}</span><span class="ss">; &quot;</span></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f&quot;median GDP per head Romania </span><span class="sc">{</span>ro[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="sc">:,.0f}</span><span class="ss"> vs all regions </span><span class="sc">{</span>d[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="sc">:,.0f}</span><span class="ss"> &quot;</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f&quot;(</span><span class="sc">{</span>ro[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="op">/</span>d[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="op">*</span><span class="dv">100</span><span class="sc">:.0f}</span><span class="ss">%)&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pct(S, col): <span class="cf">return</span> (S.loc[<span class="dv">2024</span>, col] <span class="op">/</span> S.loc[<span class="dv">2000</span>, col] <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change in spread 2000-2024 (log):  A </span><span class="sc">{</span>pct(A,<span class="st">&#39;sigma_log&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%   B </span><span class="sc">{</span>pct(B,<span class="st">&#39;sigma_log&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change in coefficient of variation: A </span><span class="sc">{</span>pct(A,<span class="st">&#39;cv&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%   B </span><span class="sc">{</span>pct(B,<span class="st">&#39;cv&#39;</span>)<span class="sc">:+.1f}</span><span class="ss">%&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>total_fall <span class="op">=</span> B.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> B.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>fall_2008 <span class="op">=</span> B.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> B.loc[<span class="dv">2008</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="ss">Sample B: spread </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss"> (2000), </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2008</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss"> (2008), </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss"> (2024)&quot;</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Total fall </span><span class="sc">{</span>total_fall<span class="sc">:.3f}</span><span class="ss">; fall by 2008 </span><span class="sc">{</span>fall_2008<span class="sc">:.3f}</span><span class="ss"> = </span><span class="sc">{</span>fall_2008<span class="op">/</span>total_fall<span class="op">*</span><span class="dv">100</span><span class="sc">:.0f}</span><span class="ss">% of the total&quot;</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Pace per year: 2000-2008 </span><span class="sc">{</span>fall_2008<span class="op">/</span><span class="dv">8</span><span class="sc">:.4f}</span><span class="ss"> | 2008-2024 </span><span class="sc">{</span>(B.loc[<span class="dv">2008</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>B.loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>])<span class="op">/</span><span class="dv">16</span><span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change 2019 to 2020 in B: </span><span class="sc">{</span>B<span class="sc">.</span>loc[<span class="dv">2020</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>B<span class="sc">.</span>loc[<span class="dv">2019</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:+.3f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>drop_A <span class="op">=</span> A.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> A.loc[<span class="dv">2002</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>drop_C <span class="op">=</span> C.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> C.loc[<span class="dv">2002</span>, <span class="st">&quot;sigma_log&quot;</span>]</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="ss">Drop 2000 to 2002: A </span><span class="sc">{</span>drop_A<span class="sc">:.3f}</span><span class="ss">, C (no Romania) </span><span class="sc">{</span>drop_C<span class="sc">:.3f}</span><span class="ss">; share caused by Romania </span><span class="sc">{</span>(drop_A<span class="op">-</span>drop_C)<span class="op">/</span>drop_A<span class="op">*</span><span class="dv">100</span><span class="sc">:.0f}</span><span class="ss">%&quot;</span>)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Change 2011 to 2012: A </span><span class="sc">{</span>A<span class="sc">.</span>loc[<span class="dv">2012</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>A<span class="sc">.</span>loc[<span class="dv">2011</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:+.3f}</span><span class="ss">, C </span><span class="sc">{</span>C<span class="sc">.</span>loc[<span class="dv">2012</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>C<span class="sc">.</span>loc[<span class="dv">2011</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:+.3f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Romania adds to the spread: 2000 </span><span class="sc">{</span>A<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>C<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">, 2024 </span><span class="sc">{</span>A<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="op">-</span>C<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> y <span class="kw">in</span> (<span class="dv">2001</span>, <span class="dv">2024</span>):</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> gdp[gdp[<span class="st">&quot;year&quot;</span>] <span class="op">==</span> y].copy()</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">&quot;rank&quot;</span>] <span class="op">=</span> d[<span class="st">&quot;gdp_pps&quot;</span>].rank(method<span class="op">=</span><span class="st">&quot;first&quot;</span>)          <span class="co"># 1 = poorest</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    ro <span class="op">=</span> d[d[<span class="st">&quot;geo&quot;</span>].<span class="bu">str</span>.startswith(<span class="st">&quot;RO&quot;</span>)]</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="sc">{</span>y<span class="sc">}</span><span class="ss">: Romanian regions among the 12 poorest: </span><span class="sc">{</span>(ro[<span class="st">&#39;rank&#39;</span>] <span class="op">&lt;=</span> <span class="dv">12</span>)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss"> of </span><span class="sc">{</span><span class="bu">len</span>(ro)<span class="sc">}</span><span class="ss">; &quot;</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f&quot;median GDP per head Romania </span><span class="sc">{</span>ro[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="sc">:,.0f}</span><span class="ss"> vs all regions </span><span class="sc">{</span>d[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="sc">:,.0f}</span><span class="ss"> &quot;</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f&quot;(</span><span class="sc">{</span>ro[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="op">/</span>d[<span class="st">&#39;gdp_pps&#39;</span>]<span class="sc">.</span>median()<span class="op">*</span><span class="dv">100</span><span class="sc">:.0f}</span><span class="ss">%)&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Change in spread 2000-2024 (log):  A -30.7%   B -25.9%
@@ -2632,36 +2666,36 @@ Romania adds to the spread: 2000 0.048, 2024 0.004
 <section id="robustness-checks" class="level3">
 <h3 class="anchored" data-anchor-id="robustness-checks">Robustness checks</h3>
 <p>We repeated the analysis with three changes: without the largest city regions (GDP per head is inflated where many commuters work), starting in 2003 so that Belgium is included, and using euro per head instead of PPS.</p>
-<div class="cell" data-tbl-cap="Change in the spread of log GDP per head under different choices" data-execution_count="6">
+<div class="cell" data-tbl-cap="Change in the spread of log GDP per head under different choices" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cities <span class="op">=</span> [<span class="st">&quot;AT13&quot;</span>, <span class="st">&quot;BE10&quot;</span>, <span class="st">&quot;DE60&quot;</span>, <span class="st">&quot;DE30&quot;</span>, <span class="st">&quot;CZ01&quot;</span>, <span class="st">&quot;SK01&quot;</span>, <span class="st">&quot;FR10&quot;</span>, <span class="st">&quot;HU11&quot;</span>, <span class="st">&quot;PL91&quot;</span>, <span class="st">&quot;RO32&quot;</span>]</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>cities <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> cities <span class="cf">if</span> c <span class="kw">in</span> <span class="bu">set</span>(gdp[<span class="st">&quot;geo&quot;</span>])]</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> spread(gdp[<span class="op">~</span>gdp[<span class="st">&quot;geo&quot;</span>].isin(cities)])</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> spread(gdp[gdp[<span class="st">&quot;geo&quot;</span>].isin(balanced) <span class="op">&amp;</span> <span class="op">~</span>gdp[<span class="st">&quot;geo&quot;</span>].isin(cities)])</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>Spread03 <span class="op">=</span> spread(gdp[gdp[<span class="st">&quot;year&quot;</span>] <span class="op">&gt;=</span> <span class="dv">2003</span>])</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>g03 <span class="op">=</span> gdp[gdp[<span class="st">&quot;year&quot;</span>] <span class="op">&gt;=</span> <span class="dv">2003</span>]</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>full03 <span class="op">=</span> g03.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].nunique()</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>full03 <span class="op">=</span> full03[full03 <span class="op">==</span> <span class="dv">22</span>].index</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>Cx <span class="op">=</span> spread(g03[g03[<span class="st">&quot;geo&quot;</span>].isin(full03)])</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> chg(S, y0, y1): <span class="cf">return</span> (S.loc[y1, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">/</span> S.loc[y0, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> <span class="dv">100</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>rob <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;period&quot;</span>: [<span class="st">&quot;2000-2024&quot;</span>] <span class="op">*</span> <span class="dv">4</span> <span class="op">+</span> [<span class="st">&quot;2003-2024&quot;</span>] <span class="op">*</span> <span class="dv">2</span>,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;sample&quot;</span>: [<span class="st">&quot;A (all available)&quot;</span>, <span class="st">&quot;B (every year)&quot;</span>, <span class="st">&quot;A without big cities&quot;</span>, <span class="st">&quot;B without big cities&quot;</span>,</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;A from 2003&quot;</span>, <span class="ss">f&quot;B from 2003 (</span><span class="sc">{</span><span class="bu">len</span>(full03)<span class="sc">}</span><span class="ss"> regions, incl. Belgium)&quot;</span>],</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;spread at start&quot;</span>: [A.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>], B.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>], D.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>],</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>                        E.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>], Spread03.loc[<span class="dv">2003</span>, <span class="st">&quot;sigma_log&quot;</span>], Cx.loc[<span class="dv">2003</span>, <span class="st">&quot;sigma_log&quot;</span>]],</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;spread in 2024&quot;</span>: [A.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], B.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], D.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>],</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>                       E.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], Spread03.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], Cx.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>]],</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;change %&quot;</span>: [chg(A, <span class="dv">2000</span>, <span class="dv">2024</span>), chg(B, <span class="dv">2000</span>, <span class="dv">2024</span>), chg(D, <span class="dv">2000</span>, <span class="dv">2024</span>), chg(E, <span class="dv">2000</span>, <span class="dv">2024</span>),</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>                 chg(Spread03, <span class="dv">2003</span>, <span class="dv">2024</span>), chg(Cx, <span class="dv">2003</span>, <span class="dv">2024</span>)],</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>}).<span class="bu">round</span>(<span class="dv">3</span>)</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>rob</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cities <span class="op">=</span> [<span class="st">&quot;AT13&quot;</span>, <span class="st">&quot;BE10&quot;</span>, <span class="st">&quot;DE60&quot;</span>, <span class="st">&quot;DE30&quot;</span>, <span class="st">&quot;CZ01&quot;</span>, <span class="st">&quot;SK01&quot;</span>, <span class="st">&quot;FR10&quot;</span>, <span class="st">&quot;HU11&quot;</span>, <span class="st">&quot;PL91&quot;</span>, <span class="st">&quot;RO32&quot;</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>cities <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> cities <span class="cf">if</span> c <span class="kw">in</span> <span class="bu">set</span>(gdp[<span class="st">&quot;geo&quot;</span>])]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> spread(gdp[<span class="op">~</span>gdp[<span class="st">&quot;geo&quot;</span>].isin(cities)])</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> spread(gdp[gdp[<span class="st">&quot;geo&quot;</span>].isin(balanced) <span class="op">&amp;</span> <span class="op">~</span>gdp[<span class="st">&quot;geo&quot;</span>].isin(cities)])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>Spread03 <span class="op">=</span> spread(gdp[gdp[<span class="st">&quot;year&quot;</span>] <span class="op">&gt;=</span> <span class="dv">2003</span>])</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>g03 <span class="op">=</span> gdp[gdp[<span class="st">&quot;year&quot;</span>] <span class="op">&gt;=</span> <span class="dv">2003</span>]</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>full03 <span class="op">=</span> g03.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].nunique()</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>full03 <span class="op">=</span> full03[full03 <span class="op">==</span> <span class="dv">22</span>].index</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>Cx <span class="op">=</span> spread(g03[g03[<span class="st">&quot;geo&quot;</span>].isin(full03)])</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> chg(S, y0, y1): <span class="cf">return</span> (S.loc[y1, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">/</span> S.loc[y0, <span class="st">&quot;sigma_log&quot;</span>] <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>rob <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;period&quot;</span>: [<span class="st">&quot;2000-2024&quot;</span>] <span class="op">*</span> <span class="dv">4</span> <span class="op">+</span> [<span class="st">&quot;2003-2024&quot;</span>] <span class="op">*</span> <span class="dv">2</span>,</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;sample&quot;</span>: [<span class="st">&quot;A (all available)&quot;</span>, <span class="st">&quot;B (every year)&quot;</span>, <span class="st">&quot;A without big cities&quot;</span>, <span class="st">&quot;B without big cities&quot;</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;A from 2003&quot;</span>, <span class="ss">f&quot;B from 2003 (</span><span class="sc">{</span><span class="bu">len</span>(full03)<span class="sc">}</span><span class="ss"> regions, incl. Belgium)&quot;</span>],</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;spread at start&quot;</span>: [A.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>], B.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>], D.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>],</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>                        E.loc[<span class="dv">2000</span>, <span class="st">&quot;sigma_log&quot;</span>], Spread03.loc[<span class="dv">2003</span>, <span class="st">&quot;sigma_log&quot;</span>], Cx.loc[<span class="dv">2003</span>, <span class="st">&quot;sigma_log&quot;</span>]],</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;spread in 2024&quot;</span>: [A.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], B.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], D.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>],</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>                       E.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], Spread03.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>], Cx.loc[<span class="dv">2024</span>, <span class="st">&quot;sigma_log&quot;</span>]],</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;change %&quot;</span>: [chg(A, <span class="dv">2000</span>, <span class="dv">2024</span>), chg(B, <span class="dv">2000</span>, <span class="dv">2024</span>), chg(D, <span class="dv">2000</span>, <span class="dv">2024</span>), chg(E, <span class="dv">2000</span>, <span class="dv">2024</span>),</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>                 chg(Spread03, <span class="dv">2003</span>, <span class="dv">2024</span>), chg(Cx, <span class="dv">2003</span>, <span class="dv">2024</span>)],</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>}).<span class="bu">round</span>(<span class="dv">3</span>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>rob</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="robustness" class="cell-output cell-output-display" data-execution_count="6">
+<div id="robustness" class="cell-output cell-output-display" data-execution_count="7">
 <div>
 
 
@@ -2732,28 +2766,28 @@ Romania adds to the spread: 2000 0.048, 2024 0.004
 </div>
 </div>
 </div>
-<div id="robustness-euro" class="cell" data-execution_count="7">
+<div id="robustness-euro" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>raw_path <span class="op">=</span> <span class="st">&quot;data/raw_data/estat_nama_10r_2gdp.tsv&quot;</span>      <span class="co"># raw GDP file from Eurostat</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>raw <span class="op">=</span> pd.read_csv(raw_path, sep<span class="op">=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, dtype<span class="op">=</span><span class="bu">str</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>raw.columns <span class="op">=</span> [c.strip() <span class="cf">for</span> c <span class="kw">in</span> raw.columns]</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>first <span class="op">=</span> raw.columns[<span class="dv">0</span>]</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>dims <span class="op">=</span> first.split(<span class="st">&quot;</span><span class="ch">\\</span><span class="st">&quot;</span>)[<span class="dv">0</span>].split(<span class="st">&quot;,&quot;</span>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>raw[dims] <span class="op">=</span> raw[first].<span class="bu">str</span>.split(<span class="st">&quot;,&quot;</span>, expand<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> raw[raw[<span class="st">&quot;unit&quot;</span>] <span class="op">==</span> <span class="st">&quot;EUR_HAB&quot;</span>]</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> eur.drop(columns<span class="op">=</span>[first]).melt(id_vars<span class="op">=</span>dims, var_name<span class="op">=</span><span class="st">&quot;year&quot;</span>, value_name<span class="op">=</span><span class="st">&quot;v&quot;</span>)</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>eur[<span class="st">&quot;year&quot;</span>] <span class="op">=</span> eur[<span class="st">&quot;year&quot;</span>].<span class="bu">str</span>.strip().astype(<span class="bu">int</span>)</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>eur[<span class="st">&quot;gdp_eur&quot;</span>] <span class="op">=</span> pd.to_numeric(eur[<span class="st">&quot;v&quot;</span>].<span class="bu">str</span>.extract(<span class="vs">r&quot;</span><span class="kw">(</span><span class="pp">[</span><span class="dv">\d</span><span class="pp">.]</span><span class="op">+</span><span class="kw">)</span><span class="vs">&quot;</span>)[<span class="dv">0</span>], errors<span class="op">=</span><span class="st">&quot;coerce&quot;</span>)</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> eur[[<span class="st">&quot;geo&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;gdp_eur&quot;</span>]].dropna()</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> eur.merge(gdp[[<span class="st">&quot;geo&quot;</span>, <span class="st">&quot;year&quot;</span>]], on<span class="op">=</span>[<span class="st">&quot;geo&quot;</span>, <span class="st">&quot;year&quot;</span>])</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>eur[<span class="st">&quot;log_gdp&quot;</span>] <span class="op">=</span> np.log(eur[<span class="st">&quot;gdp_eur&quot;</span>])</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>n_e <span class="op">=</span> eur.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].nunique()</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>bal_e <span class="op">=</span> n_e[n_e <span class="op">==</span> <span class="dv">25</span>].index</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>AE <span class="op">=</span> spread(eur.rename(columns<span class="op">=</span>{<span class="st">&quot;gdp_eur&quot;</span>: <span class="st">&quot;gdp_pps&quot;</span>}))</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>BE_ <span class="op">=</span> spread(eur[eur[<span class="st">&quot;geo&quot;</span>].isin(bal_e)].rename(columns<span class="op">=</span>{<span class="st">&quot;gdp_eur&quot;</span>: <span class="st">&quot;gdp_pps&quot;</span>}))</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Euro per head: A </span><span class="sc">{</span>chg(AE,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%  B </span><span class="sc">{</span>chg(BE_,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%  (PPS: A </span><span class="sc">{</span>chg(A,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%  B </span><span class="sc">{</span>chg(B,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%)&quot;</span>)</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Spread B in euro: 2000 </span><span class="sc">{</span>BE_<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">, 2008 </span><span class="sc">{</span>BE_<span class="sc">.</span>loc[<span class="dv">2008</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">, 2024 </span><span class="sc">{</span>BE_<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>raw_path <span class="op">=</span> <span class="st">&quot;data/raw_data/estat_nama_10r_2gdp.tsv&quot;</span>      <span class="co"># raw GDP file from Eurostat</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>raw <span class="op">=</span> pd.read_csv(raw_path, sep<span class="op">=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, dtype<span class="op">=</span><span class="bu">str</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>raw.columns <span class="op">=</span> [c.strip() <span class="cf">for</span> c <span class="kw">in</span> raw.columns]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>first <span class="op">=</span> raw.columns[<span class="dv">0</span>]</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>dims <span class="op">=</span> first.split(<span class="st">&quot;</span><span class="ch">\\</span><span class="st">&quot;</span>)[<span class="dv">0</span>].split(<span class="st">&quot;,&quot;</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>raw[dims] <span class="op">=</span> raw[first].<span class="bu">str</span>.split(<span class="st">&quot;,&quot;</span>, expand<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> raw[raw[<span class="st">&quot;unit&quot;</span>] <span class="op">==</span> <span class="st">&quot;EUR_HAB&quot;</span>]</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> eur.drop(columns<span class="op">=</span>[first]).melt(id_vars<span class="op">=</span>dims, var_name<span class="op">=</span><span class="st">&quot;year&quot;</span>, value_name<span class="op">=</span><span class="st">&quot;v&quot;</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>eur[<span class="st">&quot;year&quot;</span>] <span class="op">=</span> eur[<span class="st">&quot;year&quot;</span>].<span class="bu">str</span>.strip().astype(<span class="bu">int</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>eur[<span class="st">&quot;gdp_eur&quot;</span>] <span class="op">=</span> pd.to_numeric(eur[<span class="st">&quot;v&quot;</span>].<span class="bu">str</span>.extract(<span class="vs">r&quot;</span><span class="kw">(</span><span class="pp">[</span><span class="dv">\d</span><span class="pp">.]</span><span class="op">+</span><span class="kw">)</span><span class="vs">&quot;</span>)[<span class="dv">0</span>], errors<span class="op">=</span><span class="st">&quot;coerce&quot;</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> eur[[<span class="st">&quot;geo&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;gdp_eur&quot;</span>]].dropna()</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>eur <span class="op">=</span> eur.merge(gdp[[<span class="st">&quot;geo&quot;</span>, <span class="st">&quot;year&quot;</span>]], on<span class="op">=</span>[<span class="st">&quot;geo&quot;</span>, <span class="st">&quot;year&quot;</span>])</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>eur[<span class="st">&quot;log_gdp&quot;</span>] <span class="op">=</span> np.log(eur[<span class="st">&quot;gdp_eur&quot;</span>])</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>n_e <span class="op">=</span> eur.groupby(<span class="st">&quot;geo&quot;</span>)[<span class="st">&quot;year&quot;</span>].nunique()</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>bal_e <span class="op">=</span> n_e[n_e <span class="op">==</span> <span class="dv">25</span>].index</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>AE <span class="op">=</span> spread(eur.rename(columns<span class="op">=</span>{<span class="st">&quot;gdp_eur&quot;</span>: <span class="st">&quot;gdp_pps&quot;</span>}))</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>BE_ <span class="op">=</span> spread(eur[eur[<span class="st">&quot;geo&quot;</span>].isin(bal_e)].rename(columns<span class="op">=</span>{<span class="st">&quot;gdp_eur&quot;</span>: <span class="st">&quot;gdp_pps&quot;</span>}))</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Euro per head: A </span><span class="sc">{</span>chg(AE,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%  B </span><span class="sc">{</span>chg(BE_,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%  (PPS: A </span><span class="sc">{</span>chg(A,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%  B </span><span class="sc">{</span>chg(B,<span class="dv">2000</span>,<span class="dv">2024</span>)<span class="sc">:+.1f}</span><span class="ss">%)&quot;</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Spread B in euro: 2000 </span><span class="sc">{</span>BE_<span class="sc">.</span>loc[<span class="dv">2000</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">, 2008 </span><span class="sc">{</span>BE_<span class="sc">.</span>loc[<span class="dv">2008</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">, 2024 </span><span class="sc">{</span>BE_<span class="sc">.</span>loc[<span class="dv">2024</span>,<span class="st">&#39;sigma_log&#39;</span>]<span class="sc">:.3f}</span><span class="ss">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Euro per head: A -41.7%  B -37.7%  (PPS: A -30.7%  B -25.9%)
@@ -2781,118 +2815,118 @@ Spread B in euro: 2000 0.769, 2008 0.577, 2024 0.479</code></pre>
 <p>The analysis compares the initial GDP per capita of each region in 2000 with its average annual growth in GDP per capita over the period 2000-2024.</p>
 <p>GDP per capita is measured in purchasing power standards (PPS) to account for differences in price levels between countries.</p>
 <p>A negative relationship between initial GDP per capita and subsequent economic growth indicates beta-convergence. This would suggest that poorer regions grew faster than wealthier regions.</p>
-<div id="cell-q2-gdp-analysis" class="cell" data-execution_count="8">
+<div id="cell-q2-gdp-analysis" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> linregress</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the cleaned GDP dataset</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>gdp_q2 <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/gdp.csv&quot;</span>)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure variables are numeric</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>gdp_q2[<span class="st">&quot;year&quot;</span>] <span class="op">=</span> pd.to_numeric(gdp_q2[<span class="st">&quot;year&quot;</span>], errors<span class="op">=</span><span class="st">&quot;coerce&quot;</span>)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>gdp_q2[<span class="st">&quot;gdp_pps&quot;</span>] <span class="op">=</span> pd.to_numeric(gdp_q2[<span class="st">&quot;gdp_pps&quot;</span>], errors<span class="op">=</span><span class="st">&quot;coerce&quot;</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Select the beginning and end of the study period</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>gdp_period <span class="op">=</span> gdp_q2[</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    gdp_q2[<span class="st">&quot;year&quot;</span>].isin([<span class="dv">2000</span>, <span class="dv">2024</span>])</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>].copy()</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Arrange data so each region has one row</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>gdp_wide <span class="op">=</span> gdp_period.pivot(</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span><span class="st">&quot;geo&quot;</span>,</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    columns<span class="op">=</span><span class="st">&quot;year&quot;</span>,</span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    values<span class="op">=</span><span class="st">&quot;gdp_pps&quot;</span></span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep regions with observations in both years</span></span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>gdp_wide <span class="op">=</span> gdp_wide.dropna(subset<span class="op">=</span>[<span class="dv">2000</span>, <span class="dv">2024</span>])</span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove invalid or non-positive GDP observations</span></span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>gdp_wide <span class="op">=</span> gdp_wide[</span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    (gdp_wide[<span class="dv">2000</span>] <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">&amp;</span></span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    (gdp_wide[<span class="dv">2024</span>] <span class="op">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>].copy()</span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Calculate initial GDP and annual economic growth</span></span>
-<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>] <span class="op">=</span> np.log(gdp_wide[<span class="dv">2000</span>])</span>
-<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;annual_growth&quot;</span>] <span class="op">=</span> (</span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    np.log(gdp_wide[<span class="dv">2024</span>]) <span class="op">-</span></span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    np.log(gdp_wide[<span class="dv">2000</span>])</span>
-<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>) <span class="op">/</span> <span class="dv">24</span></span>
-<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;growth_percent&quot;</span>] <span class="op">=</span> (</span>
-<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>    (gdp_wide[<span class="dv">2024</span>] <span class="op">/</span> gdp_wide[<span class="dv">2000</span>]) <span class="op">**</span> (<span class="dv">1</span> <span class="op">/</span> <span class="dv">24</span>) <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>) <span class="op">*</span> <span class="dv">100</span></span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Run beta-convergence regression</span></span>
-<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>gdp_model <span class="op">=</span> linregress(</span>
-<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>],</span>
-<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;annual_growth&quot;</span>]</span>
-<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Display regression results</span></span>
-<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;GDP BETA-CONVERGENCE RESULTS&quot;</span>)</span>
-<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=&quot;</span> <span class="op">*</span> <span class="dv">40</span>)</span>
-<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Number of regions:&quot;</span>, <span class="bu">len</span>(gdp_wide))</span>
-<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Regression coefficient:&quot;</span>, <span class="bu">round</span>(gdp_model.slope, <span class="dv">5</span>))</span>
-<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;R-squared:&quot;</span>, <span class="bu">round</span>(gdp_model.rvalue <span class="op">**</span> <span class="dv">2</span>, <span class="dv">3</span>))</span>
-<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;P-value:&quot;</span>, <span class="ss">f&quot;</span><span class="sc">{</span>gdp_model<span class="sc">.</span>pvalue<span class="sc">:.4g}</span><span class="ss">&quot;</span>)</span>
-<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> gdp_model.slope <span class="op">&lt;</span> <span class="dv">0</span> <span class="kw">and</span> gdp_model.pvalue <span class="op">&lt;</span> <span class="fl">0.05</span>:</span>
-<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: Evidence of beta-convergence.&quot;</span>)</span>
-<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: No statistically significant evidence of beta-convergence.&quot;</span>)</span>
-<span id="cb10-65"><a href="#cb10-65" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a><span class="co"># 7. Compare growth across initial-income groups</span></span>
-<span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;income_group&quot;</span>] <span class="op">=</span> pd.qcut(</span>
-<span id="cb10-68"><a href="#cb10-68" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="dv">2000</span>],</span>
-<span id="cb10-69"><a href="#cb10-69" aria-hidden="true" tabindex="-1"></a>    q<span class="op">=</span><span class="dv">4</span>,</span>
-<span id="cb10-70"><a href="#cb10-70" aria-hidden="true" tabindex="-1"></a>    labels<span class="op">=</span>[<span class="st">&quot;Poorest&quot;</span>, <span class="st">&quot;Lower-middle&quot;</span>, <span class="st">&quot;Upper-middle&quot;</span>, <span class="st">&quot;Richest&quot;</span>]</span>
-<span id="cb10-71"><a href="#cb10-71" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-72"><a href="#cb10-72" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-73"><a href="#cb10-73" aria-hidden="true" tabindex="-1"></a>quartile_results <span class="op">=</span> gdp_wide.groupby(</span>
-<span id="cb10-74"><a href="#cb10-74" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;income_group&quot;</span>,</span>
-<span id="cb10-75"><a href="#cb10-75" aria-hidden="true" tabindex="-1"></a>    observed<span class="op">=</span><span class="va">True</span></span>
-<span id="cb10-76"><a href="#cb10-76" aria-hidden="true" tabindex="-1"></a>)[<span class="st">&quot;growth_percent&quot;</span>].mean()</span>
-<span id="cb10-77"><a href="#cb10-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-78"><a href="#cb10-78" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">AVERAGE ANNUAL GDP GROWTH BY INITIAL INCOME&quot;</span>)</span>
-<span id="cb10-79"><a href="#cb10-79" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(quartile_results.<span class="bu">round</span>(<span class="dv">2</span>))</span>
-<span id="cb10-80"><a href="#cb10-80" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-81"><a href="#cb10-81" aria-hidden="true" tabindex="-1"></a><span class="co"># 8. Create scatter plot and regression line</span></span>
-<span id="cb10-82"><a href="#cb10-82" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">6</span>))</span>
-<span id="cb10-83"><a href="#cb10-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-84"><a href="#cb10-84" aria-hidden="true" tabindex="-1"></a>plt.scatter(</span>
-<span id="cb10-85"><a href="#cb10-85" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>],</span>
-<span id="cb10-86"><a href="#cb10-86" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;annual_growth&quot;</span>] <span class="op">*</span> <span class="dv">100</span>,</span>
-<span id="cb10-87"><a href="#cb10-87" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.7</span></span>
-<span id="cb10-88"><a href="#cb10-88" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-89"><a href="#cb10-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-90"><a href="#cb10-90" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(</span>
-<span id="cb10-91"><a href="#cb10-91" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>].<span class="bu">min</span>(),</span>
-<span id="cb10-92"><a href="#cb10-92" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>].<span class="bu">max</span>(),</span>
-<span id="cb10-93"><a href="#cb10-93" aria-hidden="true" tabindex="-1"></a>    <span class="dv">100</span></span>
-<span id="cb10-94"><a href="#cb10-94" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-95"><a href="#cb10-95" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-96"><a href="#cb10-96" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> (</span>
-<span id="cb10-97"><a href="#cb10-97" aria-hidden="true" tabindex="-1"></a>    gdp_model.intercept <span class="op">+</span></span>
-<span id="cb10-98"><a href="#cb10-98" aria-hidden="true" tabindex="-1"></a>    gdp_model.slope <span class="op">*</span> x</span>
-<span id="cb10-99"><a href="#cb10-99" aria-hidden="true" tabindex="-1"></a>) <span class="op">*</span> <span class="dv">100</span></span>
-<span id="cb10-100"><a href="#cb10-100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-101"><a href="#cb10-101" aria-hidden="true" tabindex="-1"></a>plt.plot(x, y, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
-<span id="cb10-102"><a href="#cb10-102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-103"><a href="#cb10-103" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">&quot;Initial log GDP per capita (2000)&quot;</span>)</span>
-<span id="cb10-104"><a href="#cb10-104" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">&quot;Average annual GDP growth (%)&quot;</span>)</span>
-<span id="cb10-105"><a href="#cb10-105" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">&quot;GDP beta-convergence across EU regions, 2000-2024&quot;</span>)</span>
-<span id="cb10-106"><a href="#cb10-106" aria-hidden="true" tabindex="-1"></a>plt.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb10-107"><a href="#cb10-107" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-108"><a href="#cb10-108" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb10-109"><a href="#cb10-109" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> linregress</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the cleaned GDP dataset</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>gdp_q2 <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/gdp.csv&quot;</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure variables are numeric</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>gdp_q2[<span class="st">&quot;year&quot;</span>] <span class="op">=</span> pd.to_numeric(gdp_q2[<span class="st">&quot;year&quot;</span>], errors<span class="op">=</span><span class="st">&quot;coerce&quot;</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>gdp_q2[<span class="st">&quot;gdp_pps&quot;</span>] <span class="op">=</span> pd.to_numeric(gdp_q2[<span class="st">&quot;gdp_pps&quot;</span>], errors<span class="op">=</span><span class="st">&quot;coerce&quot;</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Select the beginning and end of the study period</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>gdp_period <span class="op">=</span> gdp_q2[</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    gdp_q2[<span class="st">&quot;year&quot;</span>].isin([<span class="dv">2000</span>, <span class="dv">2024</span>])</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>].copy()</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Arrange data so each region has one row</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>gdp_wide <span class="op">=</span> gdp_period.pivot(</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span><span class="st">&quot;geo&quot;</span>,</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    columns<span class="op">=</span><span class="st">&quot;year&quot;</span>,</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    values<span class="op">=</span><span class="st">&quot;gdp_pps&quot;</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep regions with observations in both years</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>gdp_wide <span class="op">=</span> gdp_wide.dropna(subset<span class="op">=</span>[<span class="dv">2000</span>, <span class="dv">2024</span>])</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove invalid or non-positive GDP observations</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>gdp_wide <span class="op">=</span> gdp_wide[</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>    (gdp_wide[<span class="dv">2000</span>] <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">&amp;</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    (gdp_wide[<span class="dv">2024</span>] <span class="op">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>].copy()</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Calculate initial GDP and annual economic growth</span></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>] <span class="op">=</span> np.log(gdp_wide[<span class="dv">2000</span>])</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;annual_growth&quot;</span>] <span class="op">=</span> (</span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>    np.log(gdp_wide[<span class="dv">2024</span>]) <span class="op">-</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>    np.log(gdp_wide[<span class="dv">2000</span>])</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>) <span class="op">/</span> <span class="dv">24</span></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;growth_percent&quot;</span>] <span class="op">=</span> (</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    (gdp_wide[<span class="dv">2024</span>] <span class="op">/</span> gdp_wide[<span class="dv">2000</span>]) <span class="op">**</span> (<span class="dv">1</span> <span class="op">/</span> <span class="dv">24</span>) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Run beta-convergence regression</span></span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>gdp_model <span class="op">=</span> linregress(</span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>],</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;annual_growth&quot;</span>]</span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Display regression results</span></span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;GDP BETA-CONVERGENCE RESULTS&quot;</span>)</span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=&quot;</span> <span class="op">*</span> <span class="dv">40</span>)</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Number of regions:&quot;</span>, <span class="bu">len</span>(gdp_wide))</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Regression coefficient:&quot;</span>, <span class="bu">round</span>(gdp_model.slope, <span class="dv">5</span>))</span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;R-squared:&quot;</span>, <span class="bu">round</span>(gdp_model.rvalue <span class="op">**</span> <span class="dv">2</span>, <span class="dv">3</span>))</span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;P-value:&quot;</span>, <span class="ss">f&quot;</span><span class="sc">{</span>gdp_model<span class="sc">.</span>pvalue<span class="sc">:.4g}</span><span class="ss">&quot;</span>)</span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> gdp_model.slope <span class="op">&lt;</span> <span class="dv">0</span> <span class="kw">and</span> gdp_model.pvalue <span class="op">&lt;</span> <span class="fl">0.05</span>:</span>
+<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: Evidence of beta-convergence.&quot;</span>)</span>
+<span id="cb12-63"><a href="#cb12-63" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb12-64"><a href="#cb12-64" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: No statistically significant evidence of beta-convergence.&quot;</span>)</span>
+<span id="cb12-65"><a href="#cb12-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-66"><a href="#cb12-66" aria-hidden="true" tabindex="-1"></a><span class="co"># 7. Compare growth across initial-income groups</span></span>
+<span id="cb12-67"><a href="#cb12-67" aria-hidden="true" tabindex="-1"></a>gdp_wide[<span class="st">&quot;income_group&quot;</span>] <span class="op">=</span> pd.qcut(</span>
+<span id="cb12-68"><a href="#cb12-68" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="dv">2000</span>],</span>
+<span id="cb12-69"><a href="#cb12-69" aria-hidden="true" tabindex="-1"></a>    q<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb12-70"><a href="#cb12-70" aria-hidden="true" tabindex="-1"></a>    labels<span class="op">=</span>[<span class="st">&quot;Poorest&quot;</span>, <span class="st">&quot;Lower-middle&quot;</span>, <span class="st">&quot;Upper-middle&quot;</span>, <span class="st">&quot;Richest&quot;</span>]</span>
+<span id="cb12-71"><a href="#cb12-71" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-72"><a href="#cb12-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-73"><a href="#cb12-73" aria-hidden="true" tabindex="-1"></a>quartile_results <span class="op">=</span> gdp_wide.groupby(</span>
+<span id="cb12-74"><a href="#cb12-74" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;income_group&quot;</span>,</span>
+<span id="cb12-75"><a href="#cb12-75" aria-hidden="true" tabindex="-1"></a>    observed<span class="op">=</span><span class="va">True</span></span>
+<span id="cb12-76"><a href="#cb12-76" aria-hidden="true" tabindex="-1"></a>)[<span class="st">&quot;growth_percent&quot;</span>].mean()</span>
+<span id="cb12-77"><a href="#cb12-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-78"><a href="#cb12-78" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">AVERAGE ANNUAL GDP GROWTH BY INITIAL INCOME&quot;</span>)</span>
+<span id="cb12-79"><a href="#cb12-79" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(quartile_results.<span class="bu">round</span>(<span class="dv">2</span>))</span>
+<span id="cb12-80"><a href="#cb12-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-81"><a href="#cb12-81" aria-hidden="true" tabindex="-1"></a><span class="co"># 8. Create scatter plot and regression line</span></span>
+<span id="cb12-82"><a href="#cb12-82" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">6</span>))</span>
+<span id="cb12-83"><a href="#cb12-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-84"><a href="#cb12-84" aria-hidden="true" tabindex="-1"></a>plt.scatter(</span>
+<span id="cb12-85"><a href="#cb12-85" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>],</span>
+<span id="cb12-86"><a href="#cb12-86" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;annual_growth&quot;</span>] <span class="op">*</span> <span class="dv">100</span>,</span>
+<span id="cb12-87"><a href="#cb12-87" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.7</span></span>
+<span id="cb12-88"><a href="#cb12-88" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-89"><a href="#cb12-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-90"><a href="#cb12-90" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(</span>
+<span id="cb12-91"><a href="#cb12-91" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>].<span class="bu">min</span>(),</span>
+<span id="cb12-92"><a href="#cb12-92" aria-hidden="true" tabindex="-1"></a>    gdp_wide[<span class="st">&quot;initial_log_gdp&quot;</span>].<span class="bu">max</span>(),</span>
+<span id="cb12-93"><a href="#cb12-93" aria-hidden="true" tabindex="-1"></a>    <span class="dv">100</span></span>
+<span id="cb12-94"><a href="#cb12-94" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-95"><a href="#cb12-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-96"><a href="#cb12-96" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> (</span>
+<span id="cb12-97"><a href="#cb12-97" aria-hidden="true" tabindex="-1"></a>    gdp_model.intercept <span class="op">+</span></span>
+<span id="cb12-98"><a href="#cb12-98" aria-hidden="true" tabindex="-1"></a>    gdp_model.slope <span class="op">*</span> x</span>
+<span id="cb12-99"><a href="#cb12-99" aria-hidden="true" tabindex="-1"></a>) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb12-100"><a href="#cb12-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-101"><a href="#cb12-101" aria-hidden="true" tabindex="-1"></a>plt.plot(x, y, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb12-102"><a href="#cb12-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-103"><a href="#cb12-103" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">&quot;Initial log GDP per capita (2000)&quot;</span>)</span>
+<span id="cb12-104"><a href="#cb12-104" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">&quot;Average annual GDP growth (%)&quot;</span>)</span>
+<span id="cb12-105"><a href="#cb12-105" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">&quot;GDP beta-convergence across EU regions, 2000-2024&quot;</span>)</span>
+<span id="cb12-106"><a href="#cb12-106" aria-hidden="true" tabindex="-1"></a>plt.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb12-107"><a href="#cb12-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-108"><a href="#cb12-108" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb12-109"><a href="#cb12-109" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>GDP BETA-CONVERGENCE RESULTS
@@ -2920,65 +2954,75 @@ Name: growth_percent, dtype: float64</code></pre>
 </div>
 </div>
 </div>
-<div id="cell-q2-emp-analysis" class="cell" data-execution_count="9">
+<div id="cell-q2-emp-analysis" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Employment convergence: 2000-2024</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>emp <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/emp.csv&quot;</span>)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Select initial and final employment rates</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>emp_period <span class="op">=</span> emp[emp[<span class="st">&quot;year&quot;</span>].isin([<span class="dv">2000</span>, <span class="dv">2024</span>])]</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>emp_wide <span class="op">=</span> emp_period.pivot(</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span><span class="st">&quot;geo&quot;</span>,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    columns<span class="op">=</span><span class="st">&quot;year&quot;</span>,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    values<span class="op">=</span><span class="st">&quot;emp_rate&quot;</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>).dropna(subset<span class="op">=</span>[<span class="dv">2000</span>, <span class="dv">2024</span>])</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate percentage-point change</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>emp_wide[<span class="st">&quot;employment_change&quot;</span>] <span class="op">=</span> (</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2024</span>] <span class="op">-</span> emp_wide[<span class="dv">2000</span>]</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression: initial employment rate vs change</span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>emp_model <span class="op">=</span> linregress(</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>],</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="st">&quot;employment_change&quot;</span>]</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;EMPLOYMENT CONVERGENCE RESULTS&quot;</span>)</span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;------------------------------&quot;</span>)</span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Number of regions:&quot;</span>, <span class="bu">len</span>(emp_wide))</span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Regression coefficient:&quot;</span>, <span class="bu">round</span>(emp_model.slope, <span class="dv">4</span>))</span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;R-squared:&quot;</span>, <span class="bu">round</span>(emp_model.rvalue<span class="op">**</span><span class="dv">2</span>, <span class="dv">3</span>))</span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;P-value:&quot;</span>, emp_model.pvalue)</span>
-<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot</span></span>
-<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">6</span>))</span>
-<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>plt.scatter(</span>
-<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>],</span>
-<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="st">&quot;employment_change&quot;</span>]</span>
-<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(</span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>].<span class="bu">min</span>(),</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>].<span class="bu">max</span>(),</span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    <span class="dv">100</span></span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>plt.plot(</span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>    x,</span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>    emp_model.intercept <span class="op">+</span> emp_model.slope <span class="op">*</span> x</span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">&quot;Initial employment rate (2000), ages 20-64 (%)&quot;</span>)</span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">&quot;Change in employment rate (percentage points)&quot;</span>)</span>
-<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">&quot;Employment convergence across EU regions, 2000-2024&quot;</span>)</span>
-<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Employment convergence: 2000-2024</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>emp <span class="op">=</span> pd.read_csv(<span class="st">&quot;data/clean/emp.csv&quot;</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Select initial and final employment rates</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>emp_period <span class="op">=</span> emp[emp[<span class="st">&quot;year&quot;</span>].isin([<span class="dv">2000</span>, <span class="dv">2024</span>])]</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>emp_wide <span class="op">=</span> emp_period.pivot(</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span><span class="st">&quot;geo&quot;</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    columns<span class="op">=</span><span class="st">&quot;year&quot;</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    values<span class="op">=</span><span class="st">&quot;emp_rate&quot;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>).dropna(subset<span class="op">=</span>[<span class="dv">2000</span>, <span class="dv">2024</span>])</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate percentage-point change</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>emp_wide[<span class="st">&quot;employment_change&quot;</span>] <span class="op">=</span> (</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2024</span>] <span class="op">-</span> emp_wide[<span class="dv">2000</span>]</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression: initial employment rate vs change</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>emp_model <span class="op">=</span> linregress(</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>],</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="st">&quot;employment_change&quot;</span>]</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;EMPLOYMENT CONVERGENCE RESULTS&quot;</span>)</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;------------------------------&quot;</span>)</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Number of regions:&quot;</span>, <span class="bu">len</span>(emp_wide))</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Regression coefficient:&quot;</span>, <span class="bu">round</span>(emp_model.slope, <span class="dv">4</span>))</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;R-squared:&quot;</span>, <span class="bu">round</span>(emp_model.rvalue<span class="op">**</span><span class="dv">2</span>, <span class="dv">3</span>))</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;P-value:&quot;</span>, emp_model.pvalue)</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare the change across initial-employment groups (same method as for GDP)</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>emp_wide[<span class="st">&quot;emp_group&quot;</span>] <span class="op">=</span> pd.qcut(</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>],</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    q<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    labels<span class="op">=</span>[<span class="st">&quot;Lowest&quot;</span>, <span class="st">&quot;Lower-middle&quot;</span>, <span class="st">&quot;Upper-middle&quot;</span>, <span class="st">&quot;Highest&quot;</span>]</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">AVERAGE CHANGE IN EMPLOYMENT RATE BY INITIAL EMPLOYMENT RATE (percentage points)&quot;</span>)</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(emp_wide.groupby(<span class="st">&quot;emp_group&quot;</span>, observed<span class="op">=</span><span class="va">True</span>)[<span class="st">&quot;employment_change&quot;</span>].mean().<span class="bu">round</span>(<span class="dv">2</span>))</span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">6</span>))</span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>plt.scatter(</span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>],</span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="st">&quot;employment_change&quot;</span>]</span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(</span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>].<span class="bu">min</span>(),</span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>    emp_wide[<span class="dv">2000</span>].<span class="bu">max</span>(),</span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>    <span class="dv">100</span></span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a>plt.plot(</span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>    x,</span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a>    emp_model.intercept <span class="op">+</span> emp_model.slope <span class="op">*</span> x</span>
+<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">&quot;Initial employment rate (2000), ages 20-64 (%)&quot;</span>)</span>
+<span id="cb14-62"><a href="#cb14-62" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">&quot;Change in employment rate (percentage points)&quot;</span>)</span>
+<span id="cb14-63"><a href="#cb14-63" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">&quot;Employment convergence across EU regions, 2000-2024&quot;</span>)</span>
+<span id="cb14-64"><a href="#cb14-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-65"><a href="#cb14-65" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb14-66"><a href="#cb14-66" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>EMPLOYMENT CONVERGENCE RESULTS
@@ -2986,7 +3030,15 @@ Name: growth_percent, dtype: float64</code></pre>
 Number of regions: 199
 Regression coefficient: -0.3433
 R-squared: 0.199
-P-value: 4.2067900086364215e-11</code></pre>
+P-value: 4.2067900086364215e-11
+
+AVERAGE CHANGE IN EMPLOYMENT RATE BY INITIAL EMPLOYMENT RATE (percentage points)
+emp_group
+Lowest          13.49
+Lower-middle    11.45
+Upper-middle     7.94
+Highest          6.81
+Name: employment_change, dtype: float64</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div id="q2-emp-analysis" class="quarto-figure quarto-figure-center anchored">
@@ -3002,15 +3054,118 @@ P-value: 4.2067900086364215e-11</code></pre>
 <h3 class="anchored" data-anchor-id="results-and-interpretation">Results and interpretation</h3>
 <p>The results provide evidence of beta-convergence across EU regions between 2000 and 2024. The regression analysis shows a negative relationship between initial GDP per capita and subsequent economic growth. The regression coefficient is approximately -0.01988, with an R-squared of 0.547. The relationship is statistically significant (p &lt; 0.001).</p>
 <p>This suggests that regions with lower initial GDP per capita generally experienced faster economic growth than regions that were initially wealthier. The comparison between the poorest and richest quarters supports this finding. The poorest quarter recorded average annual GDP growth of approximately 5.20%, compared with 2.81% for the richest quarter.</p>
-<p>The employment analysis provides additional evidence of convergence. Across the 199 regions with employment data for both 2000 and 2024, the regression coefficient is approximately -0.3433. This indicates that regions with lower initial employment rates generally experienced larger improvements in employment. The poorest-performing quarter in terms of initial employment rates recorded an average increase of 13.44 percentage points, compared with 6.81 percentage points for the highest quarter.</p>
+<p>The employment analysis provides additional evidence of convergence. Across the 199 regions with employment data for both 2000 and 2024, the regression coefficient is approximately -0.3433. This indicates that regions with lower initial employment rates generally experienced larger improvements in employment. The quarter of regions with the lowest initial employment rates recorded an average increase of 13.49 percentage points, compared with 6.81 percentage points for the quarter with the highest initial rates.</p>
 <p>Overall, the findings suggest that poorer EU regions experienced faster economic growth and that regions with initially lower employment rates made greater improvements in employment. However, the results do not establish that lower initial income causes faster growth. They demonstrate an association between initial regional conditions and subsequent changes.</p>
+</section>
+<section id="robustness-check-alternative-employment-age-group-1564" class="level3">
+<h3 class="anchored" data-anchor-id="robustness-check-alternative-employment-age-group-1564">Robustness Check: Alternative Employment Age Group (15–64)</h3>
+<p>The main employment measure covers ages 20-64. To check that the result does not depend on this choice, we repeat the regression for ages 15-64, using exactly the same regions for both age groups.</p>
+<div class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> employment_change(<span class="bu">file</span>):</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;One row per region: employment rate in 2000, 2024 and the change in percentage points.&quot;&quot;&quot;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> pd.read_csv(<span class="bu">file</span>)                       <span class="co"># no fallback: if a file is missing, this stops with an error</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> d[d[<span class="st">&quot;year&quot;</span>].isin([<span class="dv">2000</span>, <span class="dv">2024</span>])]</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> d.pivot(index<span class="op">=</span><span class="st">&quot;geo&quot;</span>, columns<span class="op">=</span><span class="st">&quot;year&quot;</span>, values<span class="op">=</span><span class="st">&quot;emp_rate&quot;</span>).dropna(subset<span class="op">=</span>[<span class="dv">2000</span>, <span class="dv">2024</span>]).copy()</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    w[<span class="st">&quot;change&quot;</span>] <span class="op">=</span> w[<span class="dv">2024</span>] <span class="op">-</span> w[<span class="dv">2000</span>]</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> w</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>emp_20 <span class="op">=</span> employment_change(<span class="st">&quot;data/clean/emp.csv&quot;</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>emp_15 <span class="op">=</span> employment_change(<span class="st">&quot;data/clean/emp_15_64.csv&quot;</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Same regions for both age groups</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>common <span class="op">=</span> emp_20.index.intersection(emp_15.index)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>emp_20, emp_15 <span class="op">=</span> emp_20.loc[common], emp_15.loc[common]</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Safety check: stop if the two &quot;age groups&quot; are the same numbers (this is what went wrong before)</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> emp_20[<span class="dv">2000</span>].equals(emp_15[<span class="dv">2000</span>]), <span class="st">&quot;20-64 and 15-64 data are identical: check emp_15_64.csv&quot;</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fit(w, label):</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> linregress(w[<span class="dv">2000</span>], w[<span class="st">&quot;change&quot;</span>])</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="st">&quot;Age group&quot;</span>: label, <span class="st">&quot;Regions&quot;</span>: <span class="bu">len</span>(w), <span class="st">&quot;Coefficient&quot;</span>: m.slope,</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;Std. error&quot;</span>: m.stderr, <span class="st">&quot;R-squared&quot;</span>: m.rvalue <span class="op">**</span> <span class="dv">2</span>, <span class="st">&quot;P-value&quot;</span>: m.pvalue}</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>rob_emp <span class="op">=</span> pd.DataFrame([fit(emp_20, <span class="st">&quot;20-64 (main)&quot;</span>), fit(emp_15, <span class="st">&quot;15-64 (check)&quot;</span>)])</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>converges <span class="op">=</span> (rob_emp[<span class="st">&quot;Coefficient&quot;</span>] <span class="op">&lt;</span> <span class="dv">0</span>) <span class="op">&amp;</span> (rob_emp[<span class="st">&quot;P-value&quot;</span>] <span class="op">&lt;</span> <span class="fl">0.05</span>)</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Average employment rate in 2000: 20-64 </span><span class="sc">{</span>emp_20[<span class="dv">2000</span>]<span class="sc">.</span>mean()<span class="sc">:.1f}</span><span class="ss">%, 15-64 </span><span class="sc">{</span>emp_15[<span class="dv">2000</span>]<span class="sc">.</span>mean()<span class="sc">:.1f}</span><span class="ss">%&quot;</span>)</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Correlation of the 2000-2024 changes under the two definitions: </span><span class="sc">{</span>emp_20[<span class="st">&#39;change&#39;</span>]<span class="sc">.</span>corr(emp_15[<span class="st">&#39;change&#39;</span>])<span class="sc">:.2f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> converges.<span class="bu">all</span>():</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: convergence remains under both age definitions.&quot;</span>)</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a><span class="cf">elif</span> converges.iloc[<span class="dv">0</span>]:</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: the convergence finding is sensitive to the age group.&quot;</span>)</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Conclusion: the main convergence finding needs further investigation.&quot;</span>)</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>rob_emp.assign(<span class="op">**</span>{<span class="st">&quot;P-value&quot;</span>: rob_emp[<span class="st">&quot;P-value&quot;</span>].<span class="bu">map</span>(<span class="st">&quot;</span><span class="sc">{:.1e}</span><span class="st">&quot;</span>.<span class="bu">format</span>)}).<span class="bu">round</span>(</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;Coefficient&quot;</span>: <span class="dv">3</span>, <span class="st">&quot;Std. error&quot;</span>: <span class="dv">3</span>, <span class="st">&quot;R-squared&quot;</span>: <span class="dv">3</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Average employment rate in 2000: 20-64 65.9%, 15-64 61.4%
+Correlation of the 2000-2024 changes under the two definitions: 0.99
+Conclusion: convergence remains under both age definitions.</code></pre>
+</div>
+<div id="tbl-emp-robustness" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="11">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-emp-robustness-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 3: Employment convergence, 2000-2024: ages 20-64 (main) and ages 15-64 (check), same regions
+</figcaption>
+<div aria-describedby="tbl-emp-robustness-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="11">
+<div>
+
+
+<table class="dataframe cell caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Age group</th>
+<th data-quarto-table-cell-role="th">Regions</th>
+<th data-quarto-table-cell-role="th">Coefficient</th>
+<th data-quarto-table-cell-role="th">Std. error</th>
+<th data-quarto-table-cell-role="th">R-squared</th>
+<th data-quarto-table-cell-role="th">P-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>20-64 (main)</td>
+<td>199</td>
+<td>-0.343</td>
+<td>0.049</td>
+<td>0.199</td>
+<td>4.2e-11</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>15-64 (check)</td>
+<td>199</td>
+<td>-0.270</td>
+<td>0.047</td>
+<td>0.143</td>
+<td>3.7e-08</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The result holds with the wider age group. For ages 15-64 the coefficient is -0.270 (20-64: -0.343), so regions that started with lower employment still had larger increases, and the relationship is still statistically significant (p &lt; 0.001). It is somewhat weaker: R-squared falls from 0.199 to 0.143, which means that initial employment explains about 14% of the change instead of 20%. We did not test whether the two coefficients differ significantly. The 15-64 rates are about 4.5 percentage points lower on average in 2000 (61.4% against 65.9%), which fits with many 15-19 year-olds being in education and not working, but we did not test this explanation. The two measures give almost the same change for each region (correlation 0.99), so the age group does not change which regions improved most. This check only changes the age group. It does not address the choice of regions or measurement error (see the limitations).</p>
 </section>
 <section id="limitations-of-this-analysis-1" class="level3">
 <h3 class="anchored" data-anchor-id="limitations-of-this-analysis-1">Limitations of this analysis</h3>
 <ul>
-<li><p>Different regional samples for GDP and employment The GDP and employment analyses do not contain exactly the same number of regions because data availability differs between the two indicators. This limits direct comparisons between economic growth and employment improvements. The results should therefore be interpreted as separate measures of regional convergence.</p></li>
-<li><p>Correlation does not establish causation The regression analysis identifies a relationship between initial regional GDP per capita and subsequent economic growth. However, it does not establish that being poorer causes a region to grow faster. Other factors, such as investment, infrastructure, industrial structure, education and government policies, may also influence regional economic performance.</p></li>
-<li><p>Limited observation period The analysis compares the beginning and end of the 2000–2024 period. Although this provides an overview of long-term changes, it does not fully capture economic fluctuations, financial crises, the COVID-19 pandemic or other events that may have affected individual regions during the period.</p></li>
+<li><p>Different regional samples for GDP and employment; The GDP and employment analyses do not contain exactly the same number of regions because data availability differs between the two indicators. This limits direct comparisons between economic growth and employment improvements. The results should therefore be interpreted as separate measures of regional convergence.</p></li>
+<li><p>Correlation does not establish causation; The regression analysis identifies a relationship between initial regional GDP per capita and subsequent economic growth. However, it does not establish that being poorer causes a region to grow faster. Other factors, such as investment, infrastructure, industrial structure, education and government policies, may also influence regional economic performance.</p></li>
+<li><p>Breaks in the employment series; Many 2024 employment values are flagged by Eurostat as a break in the series or a different definition (see the data section). Part of the change between 2000 and 2024 may therefore come from a change in how employment was measured and not from a real change. We did not test this.</p></li>
+<li><p>Measurement error in the starting values; Regional employment rates come from a survey, so each value has some sampling error. A region whose 2000 rate was too low by chance will tend to show a larger increase by 2024, and the reverse for a region whose rate was too high. This can make the negative coefficient look stronger than the true convergence. We did not correct for it, so the coefficients should be read as an upper estimate of how strongly low-employment regions caught up.</p></li>
+<li><p>Limited observation period; The analysis compares the beginning and end of the 2000–2024 period. Although this provides an overview of long-term changes, it does not fully capture economic fluctuations, financial crises, the COVID-19 pandemic or other events that may have affected individual regions during the period.</p></li>
 </ul>
 </section>
 </section>

@@ -11,7 +11,8 @@ OUT_DIR = "data/clean"
 # ---- Decisions (edit here, then re-run) -------------------------------------------------
 FIRST_YEAR, LAST_YEAR = 2000, 2024                       # period
 YOUTH_AGE = "Y15-24"                                     # CHANGE 7: one setting; "Y15-29" is the alternative (keeps ~28 more regions)
-EMP_AGE = "Y20-64"                                       # employment rate age group
+EMP_AGE = "Y20-64"                                       # employment rate age group (main measure)
+EMP_ALT_AGE = "Y15-64"                                   # robustness check for Question 2 -> data/clean/emp_15_64.csv
 EU27 = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR", "HU",
         "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"]
 # CHANGE 4: old region codes that are only renamed (same area, new code). Splits and merges are NOT recoded:
@@ -107,6 +108,11 @@ tables["gdp"] = gdp_pps.merge(gdp_eur, on=["geo", "year"], how="outer").fillna({
 # Employment rate, both sexes, ages 20-64, percent
 tables["emp"] = tidy(read_raw(path("estat_lfst_r_lfe2emprt.tsv"),
                               {"unit": "PC", "sex": "T", "age": EMP_AGE}), "emp_rate")
+
+# Employment rate, both sexes, ages 15-64: only used as a robustness check of the age-group decision (Question 2).
+# Same raw file, same filters and same region rules as the main table; only the age group differs.
+tables["emp_15_64"] = tidy(read_raw(path("estat_lfst_r_lfe2emprt.tsv"),
+                                    {"unit": "PC", "sex": "T", "age": EMP_ALT_AGE}), "emp_rate")
 
 # Youth unemployment rate, both sexes, all education levels, percent
 tables["youth"] = tidy(read_raw(path("estat_lfst_r_lfu3rt.tsv"),

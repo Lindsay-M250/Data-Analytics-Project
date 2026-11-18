@@ -1,6 +1,7 @@
 table,regions,with_all_years,with_2000_and_2024
 gdp,244,224,232
 emp,252,199,199
+emp_15_64,252,199,199
 youth,248,90,123
 gva,244,233,233
 pop,248,172,208

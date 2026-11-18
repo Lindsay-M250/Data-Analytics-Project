@@ -21,7 +21,32 @@ execute:
 
 GDP per head comes from Eurostat table `nama_10r_2gdp`, in purchasing power standards (PPS, `PPS_EU27_2020_HAB`), for EU27 NUTS2 regions, 2000-2024. Extra-regio territories and non-EU countries were removed, which leaves 244 regions. PPS adjusts for price differences between countries, so it compares what incomes can buy and not only their size in euro. The 2024 values are provisional.
 
-<!-- Other table owners: add one short paragraph for your own table here (employment, youth unemployment, population, sector GVA). -->
+### Employment rate
+
+Employment rates come from Eurostat table `lfst_r_lfe2emprt`: the share of people who are in work, both sexes, in percent, for EU27 NUTS2 regions, 2000-2024. The main measure covers ages 20-64, the age group of the EU employment target. As a robustness check for Question 2 we repeat the analysis for ages 15-64 (`Y15-64`), taken from the same raw file with the same filters, so the two measures differ only in the age group. Extra-regio territories and non-EU countries were removed, and Slovenian and Dutch regions that were only renamed were joined to their new codes. Regions that were split or merged are not recoded. This is why the employment file has more region codes than the GDP file: the extra codes are old regions (HR04, HU10, IE01, IE02, LT00, PT16-PT18). Question 2 uses the regions that have an employment rate in both 2000 and 2024. Some of these values carry Eurostat flags, mostly for a break in the series or a different definition in 2024. The numbers below come from the cleaned files:
+
+```{python}
+#| label: emp-data-check
+import pandas as pd
+
+emp_chk = pd.read_csv("data/clean/emp.csv")
+gdp_chk = pd.read_csv("data/clean/gdp.csv")
+
+def both_years(df, col):
+    w = df[df["year"].isin([2000, 2024])].pivot(index="geo", columns="year", values=col)
+    return w.dropna(subset=[2000, 2024]).index
+
+emp_both = both_years(emp_chk, "emp_rate")
+gdp_both = both_years(gdp_chk, "gdp_pps")
+flag_2024 = emp_chk[(emp_chk["year"] == 2024) & emp_chk["geo"].isin(emp_both)]["emp_rate_flag"].fillna("")
+
+print(f"Region codes: employment file {emp_chk['geo'].nunique()}, GDP file {gdp_chk['geo'].nunique()}")
+print(f"In the employment file but not in the GDP file: {sorted(set(emp_chk['geo']) - set(gdp_chk['geo']))}")
+print(f"Regions with an employment rate in 2000 and 2024: {len(emp_both)} (also with GDP in both years: {len(emp_both.intersection(gdp_both))})")
+print(f"2024 values flagged as break in series (b) or different definition (d): {flag_2024.str.contains('[bd]').sum()} of {len(flag_2024)}")
+```
+
+<!-- Other table owners: add one short paragraph for your own table here (youth unemployment, population, sector GVA). -->
 
 ## Question 1: Is the gap between regions narrowing?
 
@@ -390,6 +415,16 @@ print("Regression coefficient:", round(emp_model.slope, 4))
 print("R-squared:", round(emp_model.rvalue**2, 3))
 print("P-value:", emp_model.pvalue)
 
+# Compare the change across initial-employment groups (same method as for GDP)
+emp_wide["emp_group"] = pd.qcut(
+    emp_wide[2000],
+    q=4,
+    labels=["Lowest", "Lower-middle", "Upper-middle", "Highest"]
+)
+
+print("\nAVERAGE CHANGE IN EMPLOYMENT RATE BY INITIAL EMPLOYMENT RATE (percentage points)")
+print(emp_wide.groupby("emp_group", observed=True)["employment_change"].mean().round(2))
+
 # Scatter plot
 plt.figure(figsize=(9, 6))
 
@@ -423,113 +458,58 @@ The results provide evidence of beta-convergence across EU regions between 2000 
 
 This suggests that regions with lower initial GDP per capita generally experienced faster economic growth than regions that were initially wealthier. The comparison between the poorest and richest quarters supports this finding. The poorest quarter recorded average annual GDP growth of approximately 5.20%, compared with 2.81% for the richest quarter.
 
-The employment analysis provides additional evidence of convergence. Across the 199 regions with employment data for both 2000 and 2024, the regression coefficient is approximately -0.3433. This indicates that regions with lower initial employment rates generally experienced larger improvements in employment. The poorest-performing quarter in terms of initial employment rates recorded an average increase of 13.44 percentage points, compared with 6.81 percentage points for the highest quarter.
+The employment analysis provides additional evidence of convergence. Across the 199 regions with employment data for both 2000 and 2024, the regression coefficient is approximately -0.3433. This indicates that regions with lower initial employment rates generally experienced larger improvements in employment. The quarter of regions with the lowest initial employment rates recorded an average increase of 13.49 percentage points, compared with 6.81 percentage points for the quarter with the highest initial rates.
 
 Overall, the findings suggest that poorer EU regions experienced faster economic growth and that regions with initially lower employment rates made greater improvements in employment. However, the results do not establish that lower initial income causes faster growth. They demonstrate an association between initial regional conditions and subsequent changes.
 
 ### Robustness Check: Alternative Employment Age Group (15–64)
 
+The main employment measure covers ages 20-64. To check that the result does not depend on this choice, we repeat the regression for ages 15-64, using exactly the same regions for both age groups.
+
 ```{python}
-#| label: q2-robustness-comparison
+#| label: tbl-emp-robustness
+#| tbl-cap: "Employment convergence, 2000-2024: ages 20-64 (main) and ages 15-64 (check), same regions"
 
-# --- Rebuild the two datasets so this chunk runs on its own ---
+def employment_change(file):
+    """One row per region: employment rate in 2000, 2024 and the change in percentage points."""
+    d = pd.read_csv(file)                       # no fallback: if a file is missing, this stops with an error
+    d = d[d["year"].isin([2000, 2024])]
+    w = d.pivot(index="geo", columns="year", values="emp_rate").dropna(subset=[2000, 2024]).copy()
+    w["change"] = w[2024] - w[2000]
+    return w
 
-# 1. Employment 20-64 (your main analysis)
-emp_main = pd.read_csv("data/clean/emp.csv")
-emp_main = emp_main[emp_main["year"].isin([2000, 2024])]
+emp_20 = employment_change("data/clean/emp.csv")
+emp_15 = employment_change("data/clean/emp_15_64.csv")
 
-results_20_64 = emp_main.pivot(
-    index="geo",
-    columns="year",
-    values="emp_rate"
-).dropna(subset=[2000, 2024]).copy()
+# Same regions for both age groups
+common = emp_20.index.intersection(emp_15.index)
+emp_20, emp_15 = emp_20.loc[common], emp_15.loc[common]
 
-results_20_64["change"] = results_20_64[2024] - results_20_64[2000]
+# Safety check: stop if the two "age groups" are the same numbers (this is what went wrong before)
+assert not emp_20[2000].equals(emp_15[2000]), "20-64 and 15-64 data are identical: check emp_15_64.csv"
 
-# 2. Employment 15-64 (robustness check)
-# Try a separate file first, otherwise use emp.csv if it has an age column
-try:
-    emp_alt = pd.read_csv("data/clean/emp_15_64.csv")
-except FileNotFoundError:
-    emp_alt = pd.read_csv("data/clean/emp.csv")
-    if "age_group" in emp_alt.columns:
-        emp_alt = emp_alt[emp_alt["age_group"] == "15-64"]
+def fit(w, label):
+    m = linregress(w[2000], w["change"])
+    return {"Age group": label, "Regions": len(w), "Coefficient": m.slope,
+            "Std. error": m.stderr, "R-squared": m.rvalue ** 2, "P-value": m.pvalue}
 
-emp_alt = emp_alt[emp_alt["year"].isin([2000, 2024])]
+rob_emp = pd.DataFrame([fit(emp_20, "20-64 (main)"), fit(emp_15, "15-64 (check)")])
+converges = (rob_emp["Coefficient"] < 0) & (rob_emp["P-value"] < 0.05)
 
-results_15_64 = emp_alt.pivot(
-    index="geo",
-    columns="year",
-    values="emp_rate"
-).dropna(subset=[2000, 2024]).copy()
-
-results_15_64["change"] = results_15_64[2024] - results_15_64[2000]
-
-# --- Your robustness code starts here ---
-
-# Use the same regions for both age groups
-common_regions = results_20_64.index.intersection(
-    results_15_64.index
-)
-
-# Create comparable datasets
-robust_20_64 = results_20_64.loc[common_regions].copy()
-robust_15_64 = results_15_64.loc[common_regions].copy()
-
-# Run regressions using identical regional samples
-model_20_64_robust = linregress(
-    robust_20_64[2000],
-    robust_20_64["change"]
-)
-
-model_15_64_robust = linregress(
-    robust_15_64[2000],
-    robust_15_64["change"]
-)
-
-# Display comparison
-robustness_table = pd.DataFrame({
-    "Age group": ["20-64", "15-64"],
-    "Number of regions": [
-        len(common_regions),
-        len(common_regions)
-    ],
-    "Coefficient": [
-        model_20_64_robust.slope,
-        model_15_64_robust.slope
-    ],
-    "R-squared": [
-        model_20_64_robust.rvalue ** 2,
-        model_15_64_robust.rvalue ** 2
-    ],
-    "P-value": [
-        model_20_64_robust.pvalue,
-        model_15_64_robust.pvalue
-    ]
-})
-
-print("ROBUSTNESS CHECK: AGE GROUP COMPARISON")
-print("=" * 55)
-print(robustness_table.to_string(index=False))
-
-# Determine whether the convergence conclusion changes
-if (
-    model_20_64_robust.slope < 0
-    and model_20_64_robust.pvalue < 0.05
-    and model_15_64_robust.slope < 0
-    and model_15_64_robust.pvalue < 0.05
-):
-    print("\nConclusion: Convergence remains under both age definitions.")
-
-elif (
-    model_20_64_robust.slope < 0
-    and model_20_64_robust.pvalue < 0.05
-):
-    print("\nConclusion: The convergence finding is sensitive to age-group selection.")
-
+print(f"Average employment rate in 2000: 20-64 {emp_20[2000].mean():.1f}%, 15-64 {emp_15[2000].mean():.1f}%")
+print(f"Correlation of the 2000-2024 changes under the two definitions: {emp_20['change'].corr(emp_15['change']):.2f}")
+if converges.all():
+    print("Conclusion: convergence remains under both age definitions.")
+elif converges.iloc[0]:
+    print("Conclusion: the convergence finding is sensitive to the age group.")
 else:
-    print("\nConclusion: The original convergence finding requires further investigation.")
+    print("Conclusion: the main convergence finding needs further investigation.")
+
+rob_emp.assign(**{"P-value": rob_emp["P-value"].map("{:.1e}".format)}).round(
+    {"Coefficient": 3, "Std. error": 3, "R-squared": 3})
 ```
+
+The result holds with the wider age group. For ages 15-64 the coefficient is -0.270 (20-64: -0.343), so regions that started with lower employment still had larger increases, and the relationship is still statistically significant (p < 0.001). It is somewhat weaker: R-squared falls from 0.199 to 0.143, which means that initial employment explains about 14% of the change instead of 20%. We did not test whether the two coefficients differ significantly. The 15-64 rates are about 4.5 percentage points lower on average in 2000 (61.4% against 65.9%), which fits with many 15-19 year-olds being in education and not working, but we did not test this explanation. The two measures give almost the same change for each region (correlation 0.99), so the age group does not change which regions improved most. This check only changes the age group. It does not address the choice of regions or measurement error (see the limitations).
 
 ### Limitations of this analysis
 
@@ -538,6 +518,12 @@ The GDP and employment analyses do not contain exactly the same number of region
 
 - Correlation does not establish causation;
 The regression analysis identifies a relationship between initial regional GDP per capita and subsequent economic growth. However, it does not establish that being poorer causes a region to grow faster. Other factors, such as investment, infrastructure, industrial structure, education and government policies, may also influence regional economic performance.
+
+- Breaks in the employment series;
+Many 2024 employment values are flagged by Eurostat as a break in the series or a different definition (see the data section). Part of the change between 2000 and 2024 may therefore come from a change in how employment was measured and not from a real change. We did not test this.
+
+- Measurement error in the starting values;
+Regional employment rates come from a survey, so each value has some sampling error. A region whose 2000 rate was too low by chance will tend to show a larger increase by 2024, and the reverse for a region whose rate was too high. This can make the negative coefficient look stronger than the true convergence. We did not correct for it, so the coefficients should be read as an upper estimate of how strongly low-employment regions caught up.
 
 - Limited observation period;
 The analysis compares the beginning and end of the 2000–2024 period. Although this provides an overview of long-term changes, it does not fully capture economic fluctuations, financial crises, the COVID-19 pandemic or other events that may have affected individual regions during the period.
@@ -557,3 +543,4 @@ The analysis compares the beginning and end of the 2000–2024 period. Although 
 ## Use of AI
 
 See `AI_Usage.md` for the prompts, the model and its settings, and the computational effort.
+
