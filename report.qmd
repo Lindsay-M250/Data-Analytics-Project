@@ -46,6 +46,132 @@ print(f"Regions with an employment rate in 2000 and 2024: {len(emp_both)} (also 
 print(f"2024 values flagged as break in series (b) or different definition (d): {flag_2024.str.contains('[bd]').sum()} of {len(flag_2024)}")
 ```
 
+### Sector gross value added
+
+The sector structure comes from Eurostat table `nama_10r_3gva`: gross value added (GVA) by industry, in million euro at current prices (`CP_MEUR`), 2000-2024. Industries follow the NACE classification (`nace_r2`). The raw file holds NUTS3 regions, but it also holds Eurostat's own values for the NUTS2 regions. We added the NUTS3 values up to NUTS2 as a check (amounts can be added up; shares and rates cannot). Where all NUTS3 parts have a value, the sum is within 0.1% of the NUTS2 value in almost every case. Where some parts are missing the sum is too small, and in no case could the sum fill a NUTS2 value that Eurostat leaves empty. We therefore use Eurostat's NUTS2 values, and the cleaned file `gva.csv` contains exactly these values (@tbl-gva-nuts3).
+
+```{python}
+#| label: tbl-gva-nuts3
+#| tbl-cap: "Check of the sector GVA table: Eurostat NUTS2 values against the sum of their NUTS3 parts"
+import numpy as np
+import pandas as pd
+
+# 1. Raw Eurostat file: wide, one column per year; a value can carry a flag, for example "1221.7 p"
+sec_raw = pd.read_csv("data/raw_data/estat_nama_10r_3gva.tsv", sep="\t", dtype=str)
+sec_raw.columns = [c.strip() for c in sec_raw.columns]
+first = sec_raw.columns[0]
+dims = first.split("\\")[0].split(",")                       # freq, unit, nace_r2, geo
+sec_raw[dims] = sec_raw[first].str.split(",", expand=True)
+sec_raw = sec_raw[sec_raw["unit"] == "CP_MEUR"].drop(columns=[first])    # million euro, current prices
+
+# 2. One row per region, sector and year; split each cell into its value and its flag
+sec_long = sec_raw.melt(id_vars=dims, var_name="year", value_name="cell")
+sec_long["year"] = sec_long["year"].str.strip().astype(int)
+sec_long["cell"] = sec_long["cell"].str.strip()
+sec_long["value"] = pd.to_numeric(sec_long["cell"].str.extract(r"^([\d.]+)")[0], errors="coerce")
+sec_long["flag"] = sec_long["cell"].str.extract(r"^[\d.]+\s*([a-z]+)$")[0]
+
+# 3. Our regions are the 244 EU27 NUTS2 regions of the cleaned file; we keep the six sectors and the total
+sec_regions = set(pd.read_csv("data/clean/gva_sector.csv")["geo"])
+six = ["A", "B-E", "F", "G-J", "K-N", "O-U"]
+sec_long = sec_long[sec_long["nace_r2"].isin(six + ["TOTAL"])]
+official = sec_long[sec_long["geo"].isin(sec_regions)].rename(columns={"value": "official"})
+nuts3 = sec_long[(sec_long["geo"].str.len() == 5) & sec_long["geo"].str[:4].isin(sec_regions)].copy()
+nuts3["nuts2"] = nuts3["geo"].str[:4]                # the NUTS2 parent is the first four characters
+
+# 4. Sum the NUTS3 values to NUTS2 (these are amounts, so summing is valid) and count the parts present
+summed = nuts3.groupby(["nace_r2", "nuts2", "year"]).agg(
+    sum_nuts3=("value", "sum"), parts_present=("value", "count"), parts_total=("geo", "nunique")
+).reset_index().rename(columns={"nuts2": "geo"})
+chk = official[["nace_r2", "geo", "year", "official"]].merge(summed, on=["nace_r2", "geo", "year"], how="left")
+chk["complete"] = chk["parts_present"] == chk["parts_total"]       # all NUTS3 parts have a value
+chk["ratio"] = chk["sum_nuts3"] / chk["official"]
+
+has = chk[chk["official"].notna()]
+done = has[has["complete"]]
+part = has[~has["complete"] & (has["parts_total"] > 0)]
+gone = chk[chk["official"].isna()]
+check_tbl = pd.DataFrame({"cells": {
+    "NUTS2 values published by Eurostat (six sectors and total)": len(has),
+    "... with all NUTS3 parts present": len(done),
+    "... of these: NUTS3 sum within 0.1% of the NUTS2 value": int(((done["ratio"] - 1).abs() <= 0.001).sum()),
+    "... of these: largest difference (%)": round(float((done["ratio"] - 1).abs().max() * 100), 2),
+    "... with some NUTS3 parts missing": len(part),
+    "... of these: median of (sum / NUTS2 value)": round(float(part["ratio"].median()), 2),
+    "NUTS2 values missing at Eurostat": len(gone),
+    "... that the NUTS3 sum could fill (all parts present)": int((gone["complete"] & (gone["parts_total"] > 0)).sum()),
+}})
+check_tbl
+```
+
+We keep six sectors that do not overlap: agriculture, forestry and fishing (A); industry, including energy and manufacturing (B-E); construction (F); trade, transport, accommodation and food, and information and communication (G-J); finance and insurance, real estate, professional and administrative services (K-N); and public administration, education, health, arts and other services (O-U). Codes such as C (manufacturing) or G-I are parts of these sectors, and we do not use them, because they would count the same value twice. The share of a sector is its GVA divided by the total GVA of the region, in percent. The six sectors add up to the total within 0.04%, so the shares add up to 100%.
+
+```{python}
+#| label: gva-team-file
+# Is the cleaned file the same as the Eurostat NUTS2 values?
+team_gva = pd.read_csv("data/clean/gva.csv")
+team_gva = team_gva[team_gva["sector"].isin(six + ["TOTAL"])].rename(columns={"sector": "nace_r2"})
+both = team_gva.merge(has[["nace_r2", "geo", "year", "official"]], on=["nace_r2", "geo", "year"], how="outer")
+differ = both["gva_meur"].sub(both["official"]).abs().gt(0.5) | (both["gva_meur"].isna() != both["official"].isna())
+print(f"Cells in the cleaned file: {both['gva_meur'].notna().sum()}; Eurostat NUTS2 cells: {both['official'].notna().sum()}; cells that differ: {int(differ.sum())}")
+
+# The six sectors add up to the total (shares are therefore close to 100%)
+tot = team_gva[team_gva["nace_r2"] == "TOTAL"].set_index(["geo", "year"])["gva_meur"]
+six_sum = team_gva[team_gva["nace_r2"] != "TOTAL"].groupby(["geo", "year"])["gva_meur"].sum()
+gap = ((six_sum / tot - 1) * 100).dropna()
+print(f"Sum of the six sectors against the total, difference in %: min {gap.min():.3f}, median {gap.median():.3f}, max {gap.max():.3f}")
+```
+
+Coverage is not complete. Belgium has no sector values before 2003, and Germany, the Netherlands and Poland have none for 2024. The values for 2023 and 2024 are provisional or estimated, and the 2009 values of some regions carry a break flag (@tbl-gva-coverage, @tbl-gva-gaps).
+
+```{python}
+#| label: tbl-gva-coverage
+#| tbl-cap: "Regions with all six sector values and Eurostat flags on the six sectors, selected years"
+sec_clean = pd.read_csv("data/clean/gva_sector.csv")
+fl = team_gva[team_gva["nace_r2"] != "TOTAL"]
+sec_cov = pd.DataFrame({"regions with sector values": sec_clean.groupby("year")["geo"].nunique()})
+sec_cov["cells with flag p or e (%)"] = fl["gva_meur_flag"].isin(["p", "e"]).groupby(fl["year"]).mean().mul(100).round(0)
+sec_cov["cells with flag b (break)"] = fl["gva_meur_flag"].eq("b").groupby(fl["year"]).sum()
+sec_cov = sec_cov.loc[[2000, 2003, 2009, 2019, 2023, 2024]]
+sec_cov.index.name = "Year"
+sec_cov
+```
+
+```{python}
+#| label: tbl-gva-gaps
+#| tbl-cap: "Regions without sector values in every year 2000-2024, by country"
+sec_span = sec_clean.groupby("geo")["year"].agg(first_year="min", last_year="max", years="nunique")
+sec_span["country"] = sec_span.index.str[:2]
+sec_gaps = sec_span[sec_span["years"] < 25].groupby("country").agg(
+    regions=("years", "size"), first_year=("first_year", "min"), last_year=("last_year", "max"), years_with_data=("years", "min"))
+sec_gaps.index = [{"BE": "Belgium", "DE": "Germany", "NL": "Netherlands", "PL": "Poland"}.get(c, c) for c in sec_gaps.index]
+sec_gaps
+```
+
+All 244 region codes of the sector table are the same as in the GDP table, so the two tables join without recoding. How many regions can be used together is shown below:
+
+```{python}
+#| label: gva-join
+# Joined result: do the sector table and the GDP and employment tables describe the same regions?
+j_gdp = pd.read_csv("data/clean/gdp.csv")
+j_emp = pd.read_csv("data/clean/emp.csv")
+def has_both(df, col):
+    w = df[df["year"].isin([2000, 2024])].pivot(index="geo", columns="year", values=col)
+    return set(w.dropna(subset=[2000, 2024]).index)
+j_sec00 = set(sec_clean[sec_clean["year"] == 2000]["geo"])
+j_g, j_e = has_both(j_gdp, "gdp_pps"), has_both(j_emp, "emp_rate")
+print(f"Region codes: sector table {sec_clean['geo'].nunique()}, GDP table {j_gdp['geo'].nunique()}; only in one of them: {sorted(set(sec_clean['geo']) ^ set(j_gdp['geo']))}")
+print(f"Sector shares in 2000: {len(j_sec00)} regions (missing: {sorted(set(sec_clean['geo']) - j_sec00)[:3]} ... all of Belgium)")
+print(f"Sector shares in 2000 and GDP in 2000 and 2024: {len(j_sec00 & j_g)}")
+print(f"... and also an employment rate in 2000 and 2024: {len(j_sec00 & j_g & j_e)}")
+print(f"Regions with GDP and employment in both years but no 2000 sector shares: {sorted((j_g & j_e) - j_sec00)}")
+no_emp = sorted((j_sec00 & j_g) - j_e)
+emp_2000 = set(j_emp[(j_emp["year"] == 2000) & j_emp["emp_rate"].notna()]["geo"])
+print(f"Regions with sector shares and GDP but no employment rate in both years: {len(no_emp)}; of these without an employment value for 2000: {sum(r not in emp_2000 for r in no_emp)}")
+print("... by country:", pd.Series([r[:2] for r in no_emp]).value_counts().to_dict())
+```
+
+
 <!-- Other table owners: add one short paragraph for your own table here (youth unemployment, population, sector GVA). -->
 
 ## Question 1: Is the gap between regions narrowing?
@@ -530,7 +656,264 @@ The analysis compares the beginning and end of the 2000–2024 period. Although 
 
 ## Question 3: Which groups of regions behave alike?
 
-<!-- Owners: Badusha and Rethabile -->
+
+### Measure
+
+We describe every region by the share of its gross value added that comes from each of the six sectors in 2000, the first year of the period. We use the start of the period so that the sector structure is not itself a result of the growth we compare it with later. Regions with a similar mix are put in the same group with k-means clustering. The shares are standardised so that every sector counts equally, each solution is the best of 20 random starts, and the random seed is fixed so that the result can be repeated. The number of groups is chosen with the silhouette score (1 means clearly separated groups, 0 means overlapping groups) and with how well the groups can be described.
+
+To separate geography from industrial structure we use the country as the measure of geography. We look at how much of the variation in each sector lies between countries, how many countries each group covers, and how well the groups agree with the countries (adjusted Rand index, ARI: 1 means identical, about 0 means no more agreement than chance). Finally we check whether the groups behave alike: their income, growth (same definition as in Question 2), change in employment rate, and the spread of income inside each group.
+
+### Data and sample
+
+Sector shares exist for 233 regions in 2000 (Belgium has none before 2003). Of these, 232 have GDP in 2000 and 2024, and 188 also have an employment rate in both years. The other 44 have no employment value for 2000 (see the join check in the data section). Results on income therefore use 232 regions and results on employment 188.
+
+### Results
+
+The silhouette score is between 0.25 and 0.28 for every number of groups (@tbl-q3-k). We use five groups, because they can be described clearly.
+
+```{python}
+#| label: tbl-q3-k
+#| tbl-cap: "Silhouette score and inertia for 2 to 8 groups (sector shares in 2000)"
+import matplotlib.pyplot as plt
+from scipy import stats
+from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.metrics import adjusted_rand_score, silhouette_samples, silhouette_score
+from sklearn.preprocessing import StandardScaler
+
+q3_sectors = ["A", "B-E", "F", "G-J", "K-N", "O-U"]
+q3_short = {"A": "Agriculture", "B-E": "Industry", "F": "Construction", "G-J": "Trade, transport, ICT",
+            "K-N": "Finance, business services", "O-U": "Public services"}
+
+def q3_shares(year, table=sec_clean):
+    """One row per region, one column per sector: share of gross value added (%), only regions with all six."""
+    w = table[table["year"] == year].pivot(index="geo", columns="sector", values="share_pct")
+    return w[q3_sectors].dropna()
+
+Q3_YEAR = 2000                                   # structure at the start of the period
+q3_W = q3_shares(Q3_YEAR)
+q3_X = StandardScaler().fit_transform(q3_W)      # every sector counts equally in the distances
+
+rows = []
+for k in range(2, 9):
+    km = KMeans(n_clusters=k, n_init=20, random_state=42).fit(q3_X)
+    rows.append({"groups k": k, "silhouette": silhouette_score(q3_X, km.labels_), "inertia": km.inertia_})
+q3_k = pd.DataFrame(rows).set_index("groups k").round(3)
+q3_k
+```
+
+@tbl-q3-groups shows what the five groups look like, named after the sector in which each is furthest above the average.
+
+```{python}
+#| label: tbl-q3-groups
+#| tbl-cap: "The five groups: average sector shares of gross value added in 2000 (%)"
+Q3_K = 5
+q3_km = KMeans(n_clusters=Q3_K, n_init=20, random_state=42).fit(q3_X)
+q3_num = pd.Series(q3_km.labels_, index=q3_W.index)
+
+# Name each group after the sector where it is furthest above the average of all regions
+q3_above = q3_W.groupby(q3_num).mean() - q3_W.mean()
+q3_names = q3_above.idxmax(axis=1).map(q3_short)
+assert q3_names.is_unique, "two groups got the same name: check the profile table"
+q3_lab = q3_num.map(q3_names).rename("group")
+
+q3_prof = q3_W.groupby(q3_lab).mean().round(1)
+q3_prof.columns = [q3_short[c] for c in q3_prof.columns]
+q3_prof.insert(0, "regions", q3_lab.value_counts())
+q3_prof.loc["All regions"] = [len(q3_W)] + q3_W.mean().round(1).tolist()
+q3_prof["regions"] = q3_prof["regions"].astype(int)
+q3_prof
+```
+
+@tbl-q3-geo shows where the groups are, and how much of the variation in each sector lies between countries.
+
+```{python}
+#| label: tbl-q3-geo
+#| tbl-cap: "Where the groups are: number of countries and the three countries with most regions in each group"
+q3_country = pd.Series(q3_W.index.str[:2], index=q3_W.index, name="country")
+q3_ct = pd.crosstab(q3_country, q3_lab)
+
+def top3(col):
+    t = q3_ct[col].sort_values(ascending=False)
+    return ", ".join(f"{c} {n}" for c, n in t[t > 0].head(3).items())
+
+q3_geo = pd.DataFrame({"regions": q3_ct.sum(), "countries": (q3_ct > 0).sum(),
+                       "largest countries (regions)": [top3(c) for c in q3_ct.columns]})
+
+# Share of the variation in each sector that lies between countries (eta squared)
+def eta2(x):
+    m = x.groupby(q3_country).transform("mean")
+    return 1 - ((x - m) ** 2).sum() / ((x - x.mean()) ** 2).sum()
+q3_eta = pd.Series({q3_short[c]: eta2(q3_W[c]) for c in q3_sectors}).round(2)
+
+print("Share of the variation in each sector that is between countries:", q3_eta.to_dict())
+print(f"Agreement between groups and countries (adjusted Rand index): {adjusted_rand_score(q3_country, q3_lab):.2f}")
+q3_geo
+```
+
+@tbl-q3-outcomes shows how the groups did over 2000-2024. Employment changes use fewer regions (column "regions with employment").
+
+```{python}
+#| label: tbl-q3-outcomes
+#| tbl-cap: "How the groups did, 2000-2024: income per head, growth, employment and the spread inside each group"
+q3_gdp = pd.read_csv("data/clean/gdp.csv")
+q3_g = q3_gdp[q3_gdp["year"].isin([2000, 2024])].pivot(index="geo", columns="year", values="gdp_pps").dropna()
+q3_emp = pd.read_csv("data/clean/emp.csv")
+q3_e = q3_emp[q3_emp["year"].isin([2000, 2024])].pivot(index="geo", columns="year", values="emp_rate").dropna()
+
+q3_d = pd.DataFrame({"group": q3_lab}).join(q3_g, how="inner")
+q3_d["ln_gdp_2000"] = np.log(q3_d[2000])
+q3_d["growth_pct"] = ((q3_d[2024] / q3_d[2000]) ** (1 / 24) - 1) * 100     # same definition as in Question 2
+q3_d["emp_change"] = (q3_e[2024] - q3_e[2000]).reindex(q3_d.index)
+
+q3_grp = q3_d.groupby("group")
+q3_out = pd.DataFrame({
+    "regions": q3_grp.size(),
+    "GDP 2000 (median)": q3_grp[2000].median(), "GDP 2024 (median)": q3_grp[2024].median(),
+    "growth % a year": q3_grp["growth_pct"].mean(),
+    "regions with employment": q3_grp["emp_change"].count(), "employment change (pp)": q3_grp["emp_change"].mean(),
+    "spread 2000": q3_grp[2000].apply(lambda x: np.log(x).std()), "spread 2024": q3_grp[2024].apply(lambda x: np.log(x).std()),
+}).sort_values("GDP 2000 (median)")
+q3_out.round({"GDP 2000 (median)": 0, "GDP 2024 (median)": 0, "growth % a year": 2,
+              "employment change (pp)": 1, "spread 2000": 2, "spread 2024": 2})
+```
+
+```{python}
+#| label: q3-tests
+# Do the groups explain growth? Differences between groups, then what the groups add to income and country
+def r2(y, X):
+    X = np.column_stack([np.ones(len(y)), X])
+    b = np.linalg.lstsq(X, y, rcond=None)[0]
+    return 1 - (y - X @ b).var() / y.var(), X.shape[1]
+
+y = q3_d["growth_pct"].values
+G = pd.get_dummies(q3_d["group"], drop_first=True).values.astype(float)            # group dummies
+C = pd.get_dummies(q3_d.index.str[:2], drop_first=True).values.astype(float)       # country dummies
+L = q3_d[["ln_gdp_2000"]].values
+r_g, _ = r2(y, G); r_l, _ = r2(y, L); r_lg, _ = r2(y, np.column_stack([L, G]))
+r_c, k_c = r2(y, C); r_cg, k_cg = r2(y, np.column_stack([C, G]))
+F = ((r_cg - r_c) / (k_cg - k_c)) / ((1 - r_cg) / (len(y) - k_cg))
+
+kw = stats.kruskal(*[x["growth_pct"].values for _, x in q3_d.groupby("group")])
+print(f"Regions: {len(q3_d)}. Growth differs between groups (Kruskal-Wallis): H = {kw.statistic:.1f}, p = {kw.pvalue:.1g}")
+print(f"Share of the differences in growth explained (R-squared): groups alone {r_g:.2f}; initial income alone {r_l:.2f}; income and groups {r_lg:.2f}")
+print(f"With country dummies: countries alone {r_c:.3f}; countries and groups {r_cg:.3f}; F-test for the groups: F = {F:.1f}, p = {stats.f.sf(F, k_cg - k_c, len(y) - k_cg):.2g}")
+```
+
+```{python}
+#| label: fig-q3
+#| fig-cap: "Left: average sector shares in each group (2000). Right: initial income and growth of the regions, by group."
+order = q3_out.index.tolist()                                  # groups from poorest to richest in 2000
+cols = dict(zip(order, ["#e41a1c", "#377eb8", "#984ea3", "#ff7f00", "#000000"]))      # strong colours for groups
+marks = dict(zip(order, ["o", "s", "^", "D", "v"]))                                    # and a marker per group
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.5), gridspec_kw={"width_ratios": [1, 1.15]})
+
+prof = q3_W.groupby(q3_lab).mean().loc[order]
+left = np.zeros(len(order))
+palette = ["#fdd49e", "#bdbdbd", "#d9b38c", "#9ecae1", "#bcbddc", "#a1d99b"]           # light colours for sectors
+for sec, colr in zip(q3_sectors, palette):
+    ax1.barh(order, prof[sec], left=left, label=q3_short[sec], color=colr)
+    left += prof[sec].values
+ax1.set_xlabel("Share of gross value added in 2000 (%)")
+ax1.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3, fontsize=8)
+ax1.invert_yaxis()
+
+for grp in order:
+    d = q3_d[q3_d["group"] == grp]
+    ax2.scatter(d["ln_gdp_2000"], d["growth_pct"], s=26, alpha=0.8, color=cols[grp], marker=marks[grp], label=f"{grp} ({len(d)})")
+ax2.set_xlabel("Initial log GDP per head (PPS), 2000")
+ax2.set_ylabel("Average annual growth 2000-2024 (%)")
+ax2.legend(fontsize=8)
+ax2.grid(alpha=0.3)
+fig.tight_layout()
+plt.show()
+```
+
+### Interpretation
+
+**Short answer.** Regions fall into five loose types of economy. The types are partly national, and they tell us little about growth once we know where a region lies and how rich it was at the start.
+
+**The groups.** The largest group is *industry* (88 regions, 29% of value added from industry). *Trade, transport and ICT* has 57 regions (30% from this sector, and the highest construction share), *finance and business services* has 34 (29%, and almost no agriculture), and *public services* and *agriculture* have 27 regions each (33% and 14% from their own sector). The silhouette scores are low for every number of groups (0.25 to 0.28) and do not point to one best number. Regions therefore change gradually from one type to another; the groups are a useful summary, not separate boxes. The two groups with 27 regions are small, so statements about them deserve more care.
+
+**Geography or industrial structure?** Both matter. The country explains a large part of the differences in sector mix: 62% of the variation in construction, 57% in agriculture and 55% in finance and business services, but only 28% in industry. Some groups sit in a few countries. The public services group covers 6 countries, and 23 of its 27 regions are French, German or Italian. In the agriculture group 17 of 27 regions are in Romania, Bulgaria and Greece, and 30 of the 57 trade, transport and ICT regions are Spanish or Polish. Other groups cross borders: finance and business services is spread over 17 countries and industry over 14. Overall the groups agree little with the countries (ARI 0.11). The same type of economy therefore appears on both sides of borders, but where a region lies strongly shapes which type it is. We cannot separate the two completely, because the country is only a rough stand-in for geography; our files contain no distances.
+
+**Do the groups behave alike?** They differ in growth: the agriculture group grew by 4.9% a year, trade, transport and ICT by 3.9%, finance and business services by 3.2%, industry by 3.0% and public services by 2.8% (Kruskal-Wallis p = 1e-05). But this order follows the starting income. The median GDP per head in 2000 was 6,900 PPS in the agriculture group and 27,700 in the finance group. Initial income alone explains 55% of the differences in growth between regions, and adding the group raises this to 64%. When the country is also taken into account (countries alone explain 93%), the group adds only about half a percentage point (93.2% against 92.7%; the F-test gives p = 0.003, so the effect is detectable but small). Belonging to a sector group therefore says little about growth beyond the region's country and starting level. The groups behave alike mainly because their regions started at similar income levels and lie in similar countries.
+
+**Where the pattern does not hold.** Inside the groups, the spread of income fell strongly for agriculture (0.54 to 0.21) and for trade, transport and ICT (0.43 to 0.28), less for industry (0.32 to 0.24), hardly for finance (0.28 to 0.27), and *rose* for public services (0.14 to 0.20). The regions of the public services group, mostly French, German and Italian, moved apart, so this is the group that does not follow convergence. The groups with the strongest fall contain regions from poorer and richer countries (for example Romania and Spain in the agriculture group, Poland and Austria in the trade group). The fall may therefore reflect countries catching up and not a sector effect, but we have not tested this here.
+
+**Employment.** The employment rate rose by 9.5 to 11.5 percentage points in four of the groups (trade 11.5, public services 11.2, industry 10.5, finance 9.5) and by 4.7 points in the agriculture group, which has only 17 regions with employment data. Sector group is not a strong sign of how much employment grew.
+
+**Structure itself changes.** Between 2000 and 2023 the average share of finance and business services rose by 3.1 percentage points, while agriculture fell by 1.6 and industry by 1.5 (@tbl-q3-change). 71 regions changed their finance share by more than 5 points. The groups describe the economy at the start of the period, not a fixed type.
+
+```{python}
+#| label: tbl-q3-change
+#| tbl-cap: "How sector structure changed, 2000 to 2023 (average share of the 233 regions, %)"
+q3_w23 = q3_shares(2023).loc[q3_W.index]
+q3_chg = pd.DataFrame({"2000": q3_W.mean(), "2023": q3_w23.mean()})
+q3_chg["change (pp)"] = q3_chg["2023"] - q3_chg["2000"]
+q3_chg["regions that moved by more than 5 pp"] = ((q3_w23 - q3_W).abs() > 5).sum()
+q3_chg.index = [q3_short[c] for c in q3_chg.index]
+q3_chg.round(1)
+```
+
+### Robustness checks
+
+We repeated the grouping with other choices (@tbl-q3-robust). The agreement with the main solution is moderate: 0.66 across random starts (a few starts give quite different groups, the lowest agreement is 0.40), 0.65 with a different method, and 0.59 with ten finer sectors instead of six. Using shares of the sum of the six sectors instead of the total changes nothing. Only 8 of 233 regions lie closer to another group than to their own. Groups found from the structure in 2003 agree with the main groups (0.62), but groups found from 2010 or later do not (0.22 to 0.29), because sector structure changed. The broad picture is stable, the exact membership is not.
+
+```{python}
+#| label: tbl-q3-robust
+#| tbl-cap: "Do the groups depend on our choices? Agreement (adjusted Rand index) with the main solution"
+q3_gva = pd.read_csv("data/clean/gva.csv")
+
+def q3_fit(W, k=5, seed=42, n_init=20):
+    X = StandardScaler().fit_transform(W)
+    return pd.Series(KMeans(n_clusters=k, n_init=n_init, random_state=seed).fit(X).labels_, index=W.index)
+
+def ari(other):
+    c = q3_num.index.intersection(other.index)
+    return adjusted_rand_score(q3_num[c], other[c])
+
+res = []
+starts = [ari(q3_fit(q3_W, seed=s, n_init=1)) for s in range(1, 31)]
+res.append(("30 single random starts (median; lowest to highest)", f"{np.median(starts):.2f}  ({min(starts):.2f} to {max(starts):.2f})", len(q3_W)))
+ward = pd.Series(AgglomerativeClustering(n_clusters=5, linkage="ward").fit(q3_X).labels_, index=q3_W.index)
+res.append(("Different method (hierarchical, Ward)", f"{ari(ward):.2f}", len(q3_W)))
+
+ten = ["A", "B-E", "F", "G-I", "J", "K", "L", "M_N", "O-Q", "R-U"]            # finer, non-overlapping sectors
+w10 = q3_gva[(q3_gva["year"] == 2000) & q3_gva["sector"].isin(ten)].pivot(index="geo", columns="sector", values="gva_meur").dropna()
+res.append(("Ten finer sectors instead of six", f"{ari(q3_fit(w10.div(w10.sum(axis=1), axis=0) * 100)):.2f}", len(w10)))
+
+w6 = q3_gva[(q3_gva["year"] == 2000) & q3_gva["sector"].isin(q3_sectors)].pivot(index="geo", columns="sector", values="gva_meur").dropna()
+res.append(("Shares of the sum of the six sectors (not of the total)", f"{ari(q3_fit(w6.div(w6.sum(axis=1), axis=0) * 100)):.2f}", len(w6)))
+
+for yr in (2003, 2010, 2019, 2023):
+    res.append((f"Groups found from the structure in {yr} (same regions)", f"{ari(q3_fit(q3_shares(yr))):.2f}", len(q3_shares(yr))))
+
+q3_rob = pd.DataFrame(res, columns=["Check", "Agreement (ARI)", "Regions"]).set_index("Check")
+sil = silhouette_samples(q3_X, q3_num)
+print(f"Regions closer to another group than to their own (negative silhouette): {(sil < 0).sum()} of {len(sil)}")
+q3_rob
+```
+
+### Limitations of this analysis
+
+- **Weak separation.** The silhouette scores (0.25 to 0.28) show overlapping groups, and no number of groups is clearly best. We chose five because they can be described. With another k the membership changes. The groups describe tendencies, not hard types.
+- **The groups belong to 2000.** Groups found from later years agree only a little with them (ARI 0.22 to 0.29). A reader who wants the sector types of today needs a new grouping, and the link to growth would differ.
+- **Sample.** Belgium (11 regions) is not in the sample because it has no sector values before 2003. For employment we have 188 regions, because 44 have no employment value for 2000. Germany, the Netherlands and Poland have no 2024 values, and the 2023 and 2024 values are provisional or estimated. The 2009 values of some regions carry a break flag.
+- **Six broad sectors.** Trade, transport, accommodation and ICT are in one group, and finance, real estate and professional services in another. A finer split gives somewhat different groups (ARI 0.59). The sector shares are at current prices, so they also reflect price changes between sectors.
+- **Geography is only the country.** The files contain no distances, so we cannot say how much a region is like its neighbours across a border. The country is a rough stand-in.
+- **No cause.** The groups are measured in 2000 and growth comes later, but this does not show that structure causes growth. Differences between groups may come from the starting income, the country, or other things we did not measure.
+- **Small groups.** The agriculture and public services groups have 27 regions each, and the employment change of the agriculture group rests on 17 regions.
+- **What would change our answer.** A different start year or a finer sector split would move many regions between groups. If the groups explained growth within countries by more than half a percentage point, the answer to "structure or geography" would lean toward structure.
+
+#### Appendix: the regions in each group
+
+```{python}
+#| label: tbl-q3-regions
+#| tbl-cap: "Appendix: the regions in each group (NUTS2 codes)"
+q3_list = q3_lab.reset_index().rename(columns={"geo": "region"}).sort_values(["group", "region"])
+q3_list.to_csv("data/clean/q3_region_groups.csv", index=False)          # kept for Question 4 and the slides
+q3_list.groupby("group")["region"].apply(lambda s: " ".join(s)).loc[q3_out.index].to_frame("regions")
+```
 
 ## Question 4: Where do the two convergence tests disagree?
 
