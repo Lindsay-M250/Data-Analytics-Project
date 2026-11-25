@@ -1,4 +1,28 @@
+"""
+clean_data.py - builds the cleaned tables from the raw Eurostat TSV files.
 
+Run from the project folder:   python clean_data.py
+Reads:   data/raw_data/estat_*.tsv      (raw downloads, never edited)
+Writes:  data/clean/*.csv               (one cleaned table per topic, plus coverage.csv and region_code_renames.csv)
+
+Every filter below is one decision from the README decision log.
+Eurostat flags (b = break in series, p = provisional, u = low reliability, e = estimate ...)
+are KEPT in a column next to each value.
+
+What this script does that the first notebook (Archive/Cleaning code.ipynb) did not:
+  CHANGE 1  Starts from the raw TSV files in data/raw_data, so the whole chain can be re-run.
+  CHANGE 2  Eurostat flags are kept next to every value.
+  CHANGE 3  GDP is called gdp_pps and the euro values (gdp_eur) are next to it.
+  CHANGE 4  Old region codes that are only renamed are recoded (SI, NL, Greek codes).
+            Splits and merges are NOT recoded (HU, LT, HR, IE, PT): left as gaps, listed as a limitation.
+  CHANGE 5  The script stops with an error if a region-year appears twice, instead of keeping the first.
+  CHANGE 6  FRXX and HUXX (population 0 in every year) are dropped as "not a region".
+  CHANGE 7  The age groups are settings (EMP_AGE, EMP_ALT_AGE, YOUTH_GROUPS). Youth is written for 15-24 and 15-29.
+  CHANGE 8  Writes coverage.csv and region_code_renames.csv so everyone sees what is complete.
+The GVA per head and the six-sector shares (marked "FROM RETHABILE") are his calculations, kept as they were.
+Checked: every value is identical to his Project_*_EU27.csv files (now in Archive/); the only differences
+are the recoded region codes, FRXX/HUXX, and a few more GVA-per-head rows that the recoded codes allow.
+"""
 import os
 import re
 
@@ -10,7 +34,6 @@ OUT_DIR = "data/clean"
 
 # ---- Decisions (edit here, then re-run) -------------------------------------------------
 FIRST_YEAR, LAST_YEAR = 2000, 2024                       # period
-YOUTH_AGE = "Y15-24"                                     # CHANGE 7: one setting; "Y15-29" is the alternative (keeps ~28 more regions)
 EMP_AGE = "Y20-64"                                       # employment rate age group (main measure)
 EMP_ALT_AGE = "Y15-64"                                   # robustness check for Question 2 -> data/clean/emp_15_64.csv
 EU27 = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR", "HU",
@@ -115,8 +138,12 @@ tables["emp_15_64"] = tidy(read_raw(path("estat_lfst_r_lfe2emprt.tsv"),
                                     {"unit": "PC", "sex": "T", "age": EMP_ALT_AGE}), "emp_rate")
 
 # Youth unemployment rate, both sexes, all education levels, percent
-tables["youth"] = tidy(read_raw(path("estat_lfst_r_lfu3rt.tsv"),
-                                {"unit": "PC", "sex": "T", "age": YOUTH_AGE, "isced11": "TOTAL"}), "youth_unemp")
+# Youth unemployment is made twice from the same raw file, with the same filters and region rules.
+# Only the age group differs: 15-24 is the main measure (decision 4), 15-29 is the check.
+YOUTH_GROUPS = {"youth_15_24": "Y15-24", "youth_15_29": "Y15-29"}
+for _name, _age in YOUTH_GROUPS.items():
+    tables[_name] = tidy(read_raw(path("estat_lfst_r_lfu3rt.tsv"),
+                                  {"unit": "PC", "sex": "T", "age": _age, "isced11": "TOTAL"}), "youth_unemp")
 
 # Gross value added by sector, current prices, million euro (all sectors, so sector shares can be built later)
 gva = read_raw(path("estat_nama_10r_3gva.tsv"), {"unit": "CP_MEUR"}).rename(columns={"nace_r2": "sector"})

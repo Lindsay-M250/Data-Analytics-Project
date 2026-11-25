@@ -1,6 +1,4 @@
 # Data-Analytics-Project
-Project C: Are EU regions converging?  Question: Is the income and employment gap between rich and poor regions closing, and which regions don’t follow the pattern?
-# Data-Analytics-Project
 
 **Project C: Are EU regions converging?**
 
@@ -45,7 +43,9 @@ Final project for Data Analytics (MDE-CO-02, Fall 2026), Constructor University.
 |---|---|
 | `README.md` | This file: overview, data, decisions, logs, how to re-run |
 | `data/raw_data/` | Unfiltered Eurostat downloads (TSV), exactly as downloaded. **Never edit these.** |
-| `data/nama_10r_2gdp.json` | Unfiltered GDP table from the Eurostat API (all units) |
+| `clean_data.py` | Cleaning script: reads `data/raw_data/`, writes the cleaned tables to `data/clean/` |
+| `data/clean/` | Cleaned tables (one CSV per topic), created by `clean_data.py`. Also `coverage.csv` (how many regions are complete) and `region_code_renames.csv` |
+| `Archive/` | First cleaning notebook and its output files (`Project_*_EU27.csv`). Kept for reference only; nothing reads them any more |
 | `report.qmd` | Analysis: code, graphs, interpretation and conclusions |
 | `report.html` | Rendered report (created by rendering `report.qmd`) |
 | `AI_Usage.md` | Log of AI prompts, model/configuration and computational effort |
@@ -66,7 +66,7 @@ All data comes from Eurostat (open data). Every table was downloaded **unfiltere
 - **Format:** the TSV files are wide (one column per year). Each value can carry a flag, for example `45.1 b`.
 - **Flags:** `b` = break in time series, `p` = provisional, `u` = low reliability, `e` = estimated, `d` = definition differs. We keep them when converting the files, because they matter for what we trust.
 
-- **Youth unemployment files:** `youth_age_groups.py` reads the raw unemployment file and writes `data/clean/youth_15_24.csv` (ages 15-24, the main measure, identical to `youth.csv`) and `data/clean/youth_15_29.csv` (ages 15-29, the check). Both use the same filters (percent, both sexes, all education levels) and region rules as `Cleaning code 2.py`; only the age group differs.
+- **Youth unemployment files:** `clean_data.py` writes `data/clean/youth_15_24.csv` (ages 15-24, the main measure) and `data/clean/youth_15_29.csv` (ages 15-29, the check). Both use the same filters (percent, both sexes, all education levels) and region rules; only the age group differs.
 
 ### What we know about the data so far
 
@@ -76,20 +76,22 @@ All data comes from Eurostat (open data). Every table was downloaded **unfiltere
 
 ## Codebook
 
-Ten fields explained in our own words. Each person fills in the fields of their own table, and we check each other's.
+The ten fields of the raw Eurostat files, and what they mean (draft in plain words: each person can edit the fields of their own table).
 
 | Field | Appears in | What it means (own words) |
 |---|---|---|
-| `freq` | all tables | |
-| `unit` | all tables | |
-| `geo` | all tables | |
-| `TIME_PERIOD` (year columns) | all tables | |
-| `value` | all tables | |
-| flag (letter after a value) | all tables | |
-| `sex` | employment, unemployment | |
-| `age` | employment, unemployment | |
-| `isced11` | unemployment | |
-| `nace_r2` | sector GVA | |
+| `freq` | all tables | How often the value is measured. Always `A` = annual |
+| `unit` | all tables | What the number is measured in, for example `PPS_EU27_2020_HAB` (PPS per head), `EUR_HAB` (euro per head), `PC` (percent), `NR` (number of people), `CP_MEUR` (million euro, current prices) |
+| `geo` | all tables | The region code. Four characters (for example `AT11`) = a NUTS2 region; the first two letters are the country |
+| `TIME_PERIOD` (year columns) | all tables | The year of the value. In the raw files there is one column per year; in our cleaned files the column is called `year` |
+| `value` | all tables | The number itself, for example GDP per head or an employment rate. `:` in the raw file means missing |
+| flag (letter after a value) | all tables | A letter after the number that says how far to trust it: `b` break in series, `p` provisional, `u` low reliability, `e` estimated, `d` definition differs. Kept in the column `<name>_flag` of the cleaned files |
+| `sex` | employment, unemployment | `T` = total (both sexes), `F` = female, `M` = male. We use `T` |
+| `age` | employment, unemployment | The age group of the rate, for example `Y20-64` (employment) and `Y15-24` (youth unemployment). `TOTAL` in population = all ages |
+| `isced11` | unemployment | The education level of the people counted. We use `TOTAL` (all levels) |
+| `nace_r2` | sector GVA | The industry. We use the six broad groups A, B-E, F, G-J, K-N and O-U, and `TOTAL` |
+
+Fields we create in `clean_data.py`: `gdp_pps` and `gdp_eur` (GDP per head in PPS and in euro), `gva_meur` (gross value added in million euro), `gva_pc` (gross value added per head: total x 1,000,000 / population), `share_pct` (sector value as a percentage of total gross value added).
 
 ## Decision log
 
@@ -126,7 +128,6 @@ GDP per head is distorted in commuter regions, because output is counted where p
 | RO32 | Bucharest-Ilfov |
 
 Why: these are the capital and large city regions with the biggest commuter inflows. The list is our own choice, not based on a formal commuter measure. Everyone should use the same list when they check commuter effects. Result for Question 1: removing them makes the fall in spread slightly larger (sample A −34%, B −28%, against −31% and −26% with them).
-
 
 ## Limitations log
 
@@ -174,8 +175,9 @@ Everyone also writes the data and methods section of the report for their own ta
 
 1. Clone the repository: `git clone https://github.com/Lindsay-M250/Data-Analytics-Project.git`
 2. Open the folder in Positron.
-3. Install the required Python packages (list to be added once the analysis uses them).
-4. Open `report.qmd` and click **Render**, or run `quarto render report.qmd` in the terminal. This runs all the code from the raw files and creates `report.html`.
+3. Use Python 3.13 (newer versions may lack ready-made packages) and install the packages: `pandas numpy matplotlib scipy scikit-learn pyyaml nbformat nbclient ipykernel`. With uv: `uv venv --python 3.13 .venv313`, then `uv pip install --python .\.venv313\Scripts\python.exe pandas numpy matplotlib scipy scikit-learn pyyaml nbformat nbclient ipykernel`.
+4. Run `python clean_data.py` in the project folder. This reads `data/raw_data/` and writes `data/clean/`.
+5. Run `quarto render report.qmd` (or click **Render** in Positron). This runs all the analysis code on the cleaned tables and creates `report.html`.
 
 ## Working rules
 

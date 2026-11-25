@@ -1,0 +1,234 @@
+region,group
+BG31,Agriculture
+BG32,Agriculture
+BG33,Agriculture
+BG34,Agriculture
+BG42,Agriculture
+EL51,Agriculture
+EL53,Agriculture
+EL63,Agriculture
+EL64,Agriculture
+EL65,Agriculture
+ES23,Agriculture
+ES42,Agriculture
+HR02,Agriculture
+HR06,Agriculture
+HU23,Agriculture
+HU32,Agriculture
+HU33,Agriculture
+PL92,Agriculture
+PT1C,Agriculture
+PT1D,Agriculture
+RO11,Agriculture
+RO12,Agriculture
+RO21,Agriculture
+RO22,Agriculture
+RO31,Agriculture
+RO41,Agriculture
+RO42,Agriculture
+AT13,"Finance, business services"
+CZ01,"Finance, business services"
+DE21,"Finance, business services"
+DE30,"Finance, business services"
+DE60,"Finance, business services"
+DE71,"Finance, business services"
+DEA1,"Finance, business services"
+DEA2,"Finance, business services"
+DEF0,"Finance, business services"
+DK01,"Finance, business services"
+EL30,"Finance, business services"
+FI1B,"Finance, business services"
+FR10,"Finance, business services"
+FRJ1,"Finance, business services"
+FRL0,"Finance, business services"
+HU11,"Finance, business services"
+IE06,"Finance, business services"
+ITC2,"Finance, business services"
+ITC3,"Finance, business services"
+ITC4,"Finance, business services"
+ITH1,"Finance, business services"
+ITH2,"Finance, business services"
+ITI4,"Finance, business services"
+LU00,"Finance, business services"
+NL22,"Finance, business services"
+NL23,"Finance, business services"
+NL32,"Finance, business services"
+NL35,"Finance, business services"
+NL36,"Finance, business services"
+PL91,"Finance, business services"
+PT1A,"Finance, business services"
+RO32,"Finance, business services"
+SE11,"Finance, business services"
+SK01,"Finance, business services"
+AT22,Industry
+AT31,Industry
+AT34,Industry
+CZ02,Industry
+CZ03,Industry
+CZ04,Industry
+CZ05,Industry
+CZ06,Industry
+CZ07,Industry
+CZ08,Industry
+DE11,Industry
+DE12,Industry
+DE13,Industry
+DE14,Industry
+DE22,Industry
+DE23,Industry
+DE24,Industry
+DE25,Industry
+DE26,Industry
+DE27,Industry
+DE50,Industry
+DE72,Industry
+DE73,Industry
+DE91,Industry
+DE92,Industry
+DE94,Industry
+DEA3,Industry
+DEA4,Industry
+DEA5,Industry
+DEB1,Industry
+DEB2,Industry
+DEB3,Industry
+DEC0,Industry
+DED4,Industry
+DK03,Industry
+DK04,Industry
+DK05,Industry
+FI19,Industry
+FI1C,Industry
+FI1D,Industry
+FRB0,Industry
+FRC1,Industry
+FRC2,Industry
+FRD1,Industry
+FRD2,Industry
+FRE1,Industry
+FRE2,Industry
+FRF1,Industry
+FRF2,Industry
+FRF3,Industry
+FRG0,Industry
+FRI3,Industry
+FRK1,Industry
+FRK2,Industry
+HR03,Industry
+HR05,Industry
+HU21,Industry
+HU22,Industry
+HU31,Industry
+IE05,Industry
+ITC1,Industry
+ITF1,Industry
+ITF5,Industry
+ITH3,Industry
+ITH4,Industry
+ITH5,Industry
+ITI1,Industry
+ITI2,Industry
+ITI3,Industry
+NL11,Industry
+NL12,Industry
+NL13,Industry
+NL21,Industry
+NL34,Industry
+NL41,Industry
+NL42,Industry
+SE12,Industry
+SE21,Industry
+SE22,Industry
+SE23,Industry
+SE31,Industry
+SE32,Industry
+SE33,Industry
+SI03,Industry
+SI04,Industry
+SK02,Industry
+SK03,Industry
+SK04,Industry
+DE40,Public services
+DE80,Public services
+DE93,Public services
+DED2,Public services
+DED5,Public services
+DEE0,Public services
+DEG0,Public services
+DK02,Public services
+ES63,Public services
+ES64,Public services
+FRH0,Public services
+FRI1,Public services
+FRI2,Public services
+FRJ2,Public services
+FRM0,Public services
+FRY1,Public services
+FRY2,Public services
+FRY3,Public services
+FRY4,Public services
+FRY5,Public services
+ITF2,Public services
+ITF3,Public services
+ITF4,Public services
+ITF6,Public services
+ITG1,Public services
+ITG2,Public services
+PT20,Public services
+AT11,"Trade, transport, ICT"
+AT12,"Trade, transport, ICT"
+AT21,"Trade, transport, ICT"
+AT32,"Trade, transport, ICT"
+AT33,"Trade, transport, ICT"
+BG41,"Trade, transport, ICT"
+CY00,"Trade, transport, ICT"
+EE00,"Trade, transport, ICT"
+EL41,"Trade, transport, ICT"
+EL42,"Trade, transport, ICT"
+EL43,"Trade, transport, ICT"
+EL52,"Trade, transport, ICT"
+EL54,"Trade, transport, ICT"
+EL61,"Trade, transport, ICT"
+EL62,"Trade, transport, ICT"
+ES11,"Trade, transport, ICT"
+ES12,"Trade, transport, ICT"
+ES13,"Trade, transport, ICT"
+ES21,"Trade, transport, ICT"
+ES22,"Trade, transport, ICT"
+ES24,"Trade, transport, ICT"
+ES30,"Trade, transport, ICT"
+ES41,"Trade, transport, ICT"
+ES43,"Trade, transport, ICT"
+ES51,"Trade, transport, ICT"
+ES52,"Trade, transport, ICT"
+ES53,"Trade, transport, ICT"
+ES61,"Trade, transport, ICT"
+ES62,"Trade, transport, ICT"
+ES70,"Trade, transport, ICT"
+FI20,"Trade, transport, ICT"
+HU12,"Trade, transport, ICT"
+IE04,"Trade, transport, ICT"
+LT01,"Trade, transport, ICT"
+LT02,"Trade, transport, ICT"
+LV00,"Trade, transport, ICT"
+MT00,"Trade, transport, ICT"
+PL21,"Trade, transport, ICT"
+PL22,"Trade, transport, ICT"
+PL41,"Trade, transport, ICT"
+PL42,"Trade, transport, ICT"
+PL43,"Trade, transport, ICT"
+PL51,"Trade, transport, ICT"
+PL52,"Trade, transport, ICT"
+PL61,"Trade, transport, ICT"
+PL62,"Trade, transport, ICT"
+PL63,"Trade, transport, ICT"
+PL71,"Trade, transport, ICT"
+PL72,"Trade, transport, ICT"
+PL81,"Trade, transport, ICT"
+PL82,"Trade, transport, ICT"
+PL84,"Trade, transport, ICT"
+PT11,"Trade, transport, ICT"
+PT15,"Trade, transport, ICT"
+PT19,"Trade, transport, ICT"
+PT1B,"Trade, transport, ICT"
+PT30,"Trade, transport, ICT"

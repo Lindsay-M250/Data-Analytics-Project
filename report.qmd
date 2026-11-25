@@ -97,7 +97,7 @@ check_tbl = pd.DataFrame({"cells": {
     "... of these: NUTS3 sum within 0.1% of the NUTS2 value": int(((done["ratio"] - 1).abs() <= 0.001).sum()),
     "... of these: largest difference (%)": round(float((done["ratio"] - 1).abs().max() * 100), 2),
     "... with some NUTS3 parts missing": len(part),
-    "... of these: median of (sum / NUTS2 value)": round(float(part["ratio"].median()), 2),
+    "... of these: no NUTS3 value present at all": int((part["parts_present"] == 0).sum()),
     "NUTS2 values missing at Eurostat": len(gone),
     "... that the NUTS3 sum could fill (all parts present)": int((gone["complete"] & (gone["parts_total"] > 0)).sum()),
 }})
@@ -174,7 +174,7 @@ print("... by country:", pd.Series([r[:2] for r in no_emp]).value_counts().to_di
 
 ### Youth unemployment 
 
-Youth unemployment rates come from Eurostat table `lfst_r_lfu3rt`: the share of the labour force that is unemployed, in percent, both sexes, all education levels, for EU27 NUTS2 regions, 2000-2024. The main measure covers ages 15-24, the standard headline definition (decision 4). As a check we repeat the analysis for ages 15-29 (`Y15-29`). Both files are made from the same raw file with the same filters and the same region rules (script `youth_age_groups.py`), so they differ only in the age group. Extra-regio territories and non-EU countries were removed, and Slovenian and Dutch regions that were only renamed were joined to their new codes. Many regions have no value in some years, and some values carry Eurostat's `u` flag for low reliability (@tbl-youth-coverage).
+Youth unemployment rates come from Eurostat table `lfst_r_lfu3rt`: the share of the labour force that is unemployed, in percent, both sexes, all education levels, for EU27 NUTS2 regions, 2000-2024. The main measure covers ages 15-24, the standard headline definition (decision 4). As a check we repeat the analysis for ages 15-29 (`Y15-29`). Both files are made from the same raw file with the same filters and the same region rules (script `clean_data.py`), so they differ only in the age group. Extra-regio territories and non-EU countries were removed, and Slovenian and Dutch regions that were only renamed were joined to their new codes. Many regions have no value in some years, and some values carry Eurostat's `u` flag for low reliability (@tbl-youth-coverage).
 
 ```{python}
 #| label: tbl-youth-coverage
@@ -248,7 +248,7 @@ B = spread(gdp[gdp["geo"].isin(balanced)])                # B: only regions with
 C = spread(gdp[~gdp["geo"].str.startswith("RO")])         # C: sample A without Romania
 ```
 
-The GDP file has 244 regions, but not all of them have a value in every year. Table 1 lists the regions with gaps.
+The GDP file has 244 regions, but not all of them have a value in every year. @tbl-gaps lists the regions with gaps.
 
 ```{python}
 #| label: tbl-gaps
@@ -383,7 +383,8 @@ rob = pd.DataFrame({
     "change %": [chg(A, 2000, 2024), chg(B, 2000, 2024), chg(D, 2000, 2024), chg(E, 2000, 2024),
                  chg(Spread03, 2003, 2024), chg(Cx, 2003, 2024)],
 }).round(3)
-rob
+rob["change %"] = rob["change %"].round(1)
+rob.set_index(["period", "sample"])
 ```
 
 
@@ -679,19 +680,19 @@ The result holds with the wider age group. For ages 15-64 the coefficient is -0.
 
 ### Limitations of this analysis
 
-- Different regional samples for GDP and employment;
+- **Different regional samples for GDP and employment.**
 The GDP and employment analyses do not contain exactly the same number of regions because data availability differs between the two indicators. This limits direct comparisons between economic growth and employment improvements. The results should therefore be interpreted as separate measures of regional convergence.
 
-- Correlation does not establish causation;
+- **Correlation does not establish causation.**
 The regression analysis identifies a relationship between initial regional GDP per capita and subsequent economic growth. However, it does not establish that being poorer causes a region to grow faster. Other factors, such as investment, infrastructure, industrial structure, education and government policies, may also influence regional economic performance.
 
-- Breaks in the employment series;
+- **Breaks in the employment series.**
 Many 2024 employment values are flagged by Eurostat as a break in the series or a different definition (see the data section). Part of the change between 2000 and 2024 may therefore come from a change in how employment was measured and not from a real change. We did not test this.
 
-- Measurement error in the starting values;
+- **Measurement error in the starting values.**
 Regional employment rates come from a survey, so each value has some sampling error. A region whose 2000 rate was too low by chance will tend to show a larger increase by 2024, and the reverse for a region whose rate was too high. This can make the negative coefficient look stronger than the true convergence. We did not correct for it, so the coefficients should be read as an upper estimate of how strongly low-employment regions caught up.
 
-- Limited observation period;
+- **Limited observation period.**
 The analysis compares the beginning and end of the 2000–2024 period. Although this provides an overview of long-term changes, it does not fully capture economic fluctuations, financial crises, the COVID-19 pandemic or other events that may have affected individual regions during the period.
 
 ## Question 3: Which groups of regions behave alike?
@@ -1098,7 +1099,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-Over the whole period 2000-2024 the two tests agree for all four indicators: the spread is smaller and the slope is negative (@tbl-q4-tests). In the crisis (2008-2013) they also agree, on bad news: for employment and for youth unemployment the spread grows by about a third and the slope turns positive, so the regions became less alike (@fig-q4-spread). They disagree after 2008. For youth unemployment in 2008-2024 the spread does not fall (+1.9% for ages 15-24, +6.2% for ages 15-29), while the slope is still negative (-0.15 for both), although the R-squared is only 0.05. For employment in 2008-2024 the spread is almost unchanged (-4.5%) while the slope is clearly negative (-0.19). For GDP in 2008-2013 the spread is flat (-1.6%) and the slope only slightly negative, a small difference.
+Over the whole period 2000-2024 the two tests agree for all four indicators: the spread is smaller and the slope is negative (@tbl-q4-tests). The GDP rows use the 232 regions that have GDP in both 2000 and 2024, so the change in the spread (-32.0%) differs from Question 1, which gives -31% (all regions available each year) and -26% (the 224 regions with every year). In the crisis (2008-2013) they also agree, on bad news: for employment and for youth unemployment the spread grows by about a third and the slope turns positive, so the regions became less alike (@fig-q4-spread). They disagree after 2008. For youth unemployment in 2008-2024 the spread does not fall (+1.9% for ages 15-24, +6.2% for ages 15-29), while the slope is still negative (-0.15 for both), although the R-squared is only 0.05. For employment in 2008-2024 the spread is almost unchanged (-4.5%) while the slope is clearly negative (-0.19). For GDP in 2008-2013 the spread is flat (-1.6%) and the slope only slightly negative, a small difference.
 
 ```{python}
 #| label: youth-outliers
@@ -1128,7 +1129,23 @@ For the question "is the gap closing?" we believe the spread test more, because 
 
 ## Conclusion and limitations
 
-<!-- Whole team, after the questions above are finished. -->
+
+**Answer to our question.** Yes, EU27 regions converged between 2000 and 2024, but how clearly depends on the indicator and on the period.
+
+- **Income (GDP per head, PPS).** The spread across regions fell by about 31% (all regions available each year) and 26% (the 224 regions with every year), and poorer regions grew faster: the poorest quarter grew by 5.2% a year, the richest quarter by 2.8% (slope -0.0199, R-squared 0.55). About 60% of the fall in the spread came before 2008.
+- **Employment (ages 20-64).** Regions with a lower starting rate gained more (slope -0.34, R-squared 0.20). The spread fell by 16% over the whole period, but in the crisis (2008-2013) it grew by about a third.
+- **Youth unemployment (ages 15-24).** Regions with high starting rates improved most (slope -0.50), but the spread was back at its 2000 level in 2019, so we cannot say that the gap closed.
+- **Which regions did not follow.** In youth unemployment, 56 of 123 regions had a higher rate in 2024 than in 2000, mostly Spanish and Romanian regions, while Polish, Czech and Slovak regions improved much more than expected. In the sector groups, the spread of income inside the public services group (mostly French, German and Italian regions) rose from 0.14 to 0.20, while it fell in the other groups.
+- **Structure or geography.** Regions fall into five loose types of economy by their sector mix in 2000. The types are partly national (agreement with the countries 0.11) and add only about half a percentage point to explaining growth once the country and the starting income are known.
+- **The two tests.** Over the whole period the spread test and the catching-up test agree for all four indicators. After 2008 they disagree for employment and youth unemployment: the slope stays negative while the spread does not fall. For the question "is the gap closing?" we believe the spread test more, because it measures the gap directly.
+
+**Limitations of the whole project.**
+
+- **Data gaps.** Only 224 of 244 regions have a GDP value in every year. Only 199 regions have an employment rate and 123 a youth unemployment rate in both 2000 and 2024, so the tests do not always cover the same regions.
+- **Region codes.** Renamed regions were joined to their new codes, but regions that were split or merged (Hungary, Lithuania, Croatia, Ireland, Portugal) were not, so they have gaps.
+- **Association, not cause.** We describe how regions changed. We do not show why, for example whether EU funding played a role.
+- **Our choices.** PPS as the income measure, ages 20-64 and 15-24, the ten big city regions in the commuter check, the sub-periods 2008 and 2013 and five groups in Question 3 are our own choices. Where we tested other choices, the main result did not change; where we did not, we said so in each section.
+- **Data quality.** Values for 2023 and 2024 are provisional or estimated, and some series have breaks that Eurostat flags (employment in 2024, youth unemployment in 2005).
 
 ## Use of AI
 
