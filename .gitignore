@@ -1,0 +1,6 @@
+report.quarto_ipynb*
+.venv/
+.venv313/
+__pycache__/
+.quarto/
+.positron-*
