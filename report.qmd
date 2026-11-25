@@ -172,6 +172,46 @@ print("... by country:", pd.Series([r[:2] for r in no_emp]).value_counts().to_di
 ```
 
 
+### Youth unemployment 
+
+Youth unemployment rates come from Eurostat table `lfst_r_lfu3rt`: the share of the labour force that is unemployed, in percent, both sexes, all education levels, for EU27 NUTS2 regions, 2000-2024. The main measure covers ages 15-24, the standard headline definition (decision 4). As a check we repeat the analysis for ages 15-29 (`Y15-29`). Both files are made from the same raw file with the same filters and the same region rules (script `youth_age_groups.py`), so they differ only in the age group. Extra-regio territories and non-EU countries were removed, and Slovenian and Dutch regions that were only renamed were joined to their new codes. Many regions have no value in some years, and some values carry Eurostat's `u` flag for low reliability (@tbl-youth-coverage).
+
+```{python}
+#| label: tbl-youth-coverage
+#| tbl-cap: "Coverage of the youth unemployment files, ages 15-24 and 15-29"
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import linregress
+
+y24 = pd.read_csv("data/clean/youth_15_24.csv")
+y29 = pd.read_csv("data/clean/youth_15_29.csv")
+
+def wide(df, col):
+    return df.pivot(index="geo", columns="year", values=col)
+
+w24 = wide(y24, "youth_unemp")
+w29 = wide(y29, "youth_unemp")
+
+def coverage(df, w, label):
+    flagged = df["youth_unemp_flag"].fillna("").str.contains("u").mean() * 100
+    return {
+        "age group": label,
+        "regions (any year)": w.shape[0],
+        "regions with a value in 2000": int(w[2000].notna().sum()),
+        "regions with a value in 2024": int(w[2024].notna().sum()),
+        "regions with 2000 AND 2024": w.dropna(subset=[2000, 2024]).shape[0],
+        "regions with all 25 years": w.dropna().shape[0],
+        "values flagged u (%)": round(flagged),
+    }
+
+cov = pd.DataFrame([coverage(y24, w24, "15-24"), coverage(y29, w29, "15-29")]).set_index("age group").T
+cov
+```
+
+Only 123 of the 248 regions (15-24) and 151 of the 251 regions (15-29) have a value in both 2000 and 2024, therefore the catching-up test below covers about half of the regions. 
+
+
 <!-- Other table owners: add one short paragraph for your own table here (youth unemployment, population, sector GVA). -->
 
 ## Question 1: Is the gap between regions narrowing?
@@ -917,7 +957,174 @@ q3_list.groupby("group")["region"].apply(lambda s: " ".join(s)).loc[q3_out.index
 
 ## Question 4: Where do the two convergence tests disagree?
 
-<!-- Owner: Winnie -->
+### Measure
+
+Question 4 puts the two tests from Questions 1 and 2 side by side. The **spread test** is the standard deviation of the logarithm of the indicator across regions, year by year: a smaller value means the regions are more alike. The **catching-up test** compares the change between two years with the starting value: a negative slope means that regions that started worse improved more. For both tests a negative number leads to convergence. We apply both to GDP per head, employment and youth unemployment (ages 15-24, with 15-29 as a check), for 2000-2024 and for four sub-periods: before the crisis (2000-2008), the crisis (2008-2013), the recovery (2013-2024) and everything after 2008 (2008-2024). Question 1 only measured the spread of GDP, so the spread of employment and of youth unemployment is new here. For GDP, the catching-up test is the same as in Question 2 (log growth against log starting income). For employment and youth unemployment, we use the change in percentage points against the starting rate. The slopes are in different units, so we compare their direction and their R-squared, not their size.
+
+### Youth unemployment: ages 15-24 and 15-29
+
+```{python}
+#| label: tbl-youth-sigma
+#| tbl-cap: "Spread of log youth unemployment across regions (all regions with a value that year)"
+def spread(w):
+    return pd.DataFrame({"regions": w.notna().sum(), "sigma_log": np.log(w).std()})
+
+S24, S29 = spread(w24), spread(w29)
+years = [2000, 2005, 2008, 2013, 2019, 2024]
+sigma_table = pd.DataFrame({
+    "15-24 regions": S24.loc[years, "regions"], "15-24 spread": S24.loc[years, "sigma_log"],
+    "15-29 regions": S29.loc[years, "regions"], "15-29 spread": S29.loc[years, "sigma_log"],
+}).round(3)
+sigma_table.index.name = "Year"
+sigma_table
+```
+
+```{python}
+#| label: fig-youth-sigma
+#| fig-cap: "Spread of youth unemployment across EU regions, 2000-2024"
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(S24.index, S24["sigma_log"], "o-", label="Ages 15-24")
+ax.plot(S29.index, S29["sigma_log"], "s--", label="Ages 15-29")
+ax.set_xlabel("Year")
+ax.set_ylabel("Spread: std. deviation of log youth unemployment")
+ax.set_title("Do regions become more alike? Youth unemployment, 2000-2024")
+ax.legend()
+ax.grid(alpha=0.3)
+fig.tight_layout()
+plt.show()
+```
+
+The spread of youth unemployment fell from 0.68 in 2000 to 0.44 in 2005, rose to 0.69 in 2019 and fell again to 0.51 in 2024 (ages 15-24; ages 15-29 are almost identical, @tbl-youth-sigma, @fig-youth-sigma). This means that the narrowing between 2000 and 2024 (-25% with all regions available each year) is not a steady trend: in 2019 the regions were no more alike than in 2000.
+
+Two jumps in the line are partly caused by the data and not by the regions. In 2005 Eurostat flags 218 values as a break in the series. The spread falls from 0.533 to 0.443 even when we use only the 180 regions that have a value in both 2004 and 2005, so the regions that join the sample do not explain it. From 2020 none of the 20 German regions that had a value in 2019 has one. German regions have low youth unemployment (about 6% in 2019 against about 21% elsewhere), so losing them makes the spread look smaller. With only the 165 regions that have a value in both years the spread falls from 0.646 to 0.556 and not from 0.694 to 0.563, so roughly a third of the fall comes from the missing regions.
+
+```{python}
+#| label: tbl-youth-beta
+#| tbl-cap: "Catching-up test for youth unemployment, 2000-2024: change in percentage points against the rate in 2000"
+def beta(w, label):
+    d = w.dropna(subset=[2000, 2024]).copy()      # only regions with both years
+    d["change"] = d[2024] - d[2000]               # change in percentage points
+    m = linregress(d[2000], d["change"])          # line: change versus the value in 2000
+    row = {"age group": label, "regions": len(d), "slope": m.slope,
+           "R-squared": m.rvalue ** 2, "p-value": m.pvalue}
+    return d, m, row
+
+d24, m24, r24 = beta(w24, "15-24")
+d29, m29, r29 = beta(w29, "15-29")
+beta_table = pd.DataFrame([r24, r29]).set_index("age group")
+beta_table["p-value"] = beta_table["p-value"].map("{:.1e}".format)
+beta_table.round({"slope": 3, "R-squared": 3})
+```
+
+```{python}
+#| label: fig-youth-beta
+#| fig-cap: "Change in youth unemployment 2000-2024 against the rate in 2000, one dot per region"
+fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharey=True)
+for ax, d, m, label in [(axes[0], d24, m24, "Ages 15-24"), (axes[1], d29, m29, "Ages 15-29")]:
+    ax.scatter(d[2000], d["change"], alpha=0.6)
+    x = np.linspace(d[2000].min(), d[2000].max(), 100)
+    ax.plot(x, m.intercept + m.slope * x, color="red")
+    ax.axhline(0, color="grey", linewidth=0.8)
+    ax.set_title(label)
+    ax.set_xlabel("Youth unemployment in 2000 (%)")
+    ax.grid(alpha=0.3)
+axes[0].set_ylabel("Change 2000 to 2024 (percentage points)")
+fig.tight_layout()
+plt.show()
+```
+
+Both age groups show catching up: the slope is -0.498 for ages 15-24 (123 regions, R-squared 0.46) and -0.565 for ages 15-29 (151 regions, R-squared 0.51), with p-values far below 0.001 (@tbl-youth-beta, @fig-youth-beta). This means that regions with high youth unemployment in 2000 improved the most: a starting rate 10 points higher goes with a change about 5 points lower. The regions at the bottom right of the chart are mostly in southern Italy (ITF6, ITF3, ITG1): they started at 58-64% and fell by 21-25 points, but were still at 37-43% in 2024. Poland (PL51 fell by 30.6 points) and Slovakia also have large falls.
+
+```{python}
+#| label: youth-age-compare
+# same regions for both age groups
+common = d24.index.intersection(d29.index)
+c24, c29 = d24.loc[common], d29.loc[common]
+print(f"Regions in both: {len(common)}")
+print(f"Correlation 2000 {c24[2000].corr(c29[2000]):.2f} | 2024 {c24[2024].corr(c29[2024]):.2f} | change {c24['change'].corr(c29['change']):.2f}")
+print(f"Average rate 2000: 15-24 {c24[2000].mean():.1f}% vs 15-29 {c29[2000].mean():.1f}%")
+print(f"Average rate 2024: 15-24 {c24[2024].mean():.1f}% vs 15-29 {c29[2024].mean():.1f}%")
+same_24 = linregress(c24[2000], c24["change"])
+same_29 = linregress(c29[2000], c29["change"])
+print(f"Beta slope on the same regions: 15-24 {same_24.slope:.3f} (R2 {same_24.rvalue**2:.3f}) | 15-29 {same_29.slope:.3f} (R2 {same_29.rvalue**2:.3f})")
+```
+
+To compare the two age groups fairly we use the 123 regions that both files have. They agree closely: the correlation is 0.99 for the rate in 2000, 0.95 for the rate in 2024 and 0.94 for the change, and the slopes are -0.498 and -0.543. The 15-29 rates are about 4-5 points lower (21.2% against 16.9% in 2000, 19.0% against 14.1% in 2024), which fits with young adults aged 25-29 having lower unemployment than teenagers; we did not test this. This means that the age definition does not change the conclusion, which supports decision 4 (15-24 as the main measure, 15-29 as a check). We did not test whether the two slopes differ significantly.
+
+### Where the two tests disagree
+
+```{python}
+#| label: tbl-q4-tests
+#| tbl-cap: "Spread test (change in the spread, %) and catching-up test (slope, R-squared) for the same regions and periods. Negative values point to convergence."
+gdp = wide(pd.read_csv("data/clean/gdp.csv"), "gdp_pps")
+emp = wide(pd.read_csv("data/clean/emp.csv"), "emp_rate")
+
+def both_tests(w, a, b, log_form=False):
+    d = w.dropna(subset=[a, b])                          # regions with both years
+    sigma_change = (np.log(d[b]).std() / np.log(d[a]).std() - 1) * 100
+    if log_form:                                         # GDP: same as Question 2
+        m = linregress(np.log(d[a]), (np.log(d[b]) - np.log(d[a])) / (b - a))
+    else:                                                # employment and youth: change in points
+        m = linregress(d[a], d[b] - d[a])
+    return {"regions": len(d), "sigma change %": round(sigma_change, 1),
+            "beta slope": round(m.slope, 4), "beta R2": round(m.rvalue ** 2, 2),
+            "beta p": f"{m.pvalue:.0e}"}
+
+periods = [(2000, 2024), (2000, 2008), (2008, 2013), (2013, 2024), (2008, 2024)]
+rows = []
+for name, w, lf in [("GDP per head", gdp, True), ("Employment 20-64", emp, False),
+                    ("Youth unemp. 15-24", w24, False), ("Youth unemp. 15-29", w29, False)]:
+    for a, b in periods:
+        rows.append({"indicator": name, "period": f"{a}-{b}", **both_tests(w, a, b, lf)})
+q4 = pd.DataFrame(rows)
+q4
+```
+
+```{python}
+#| label: fig-q4-spread
+#| fig-cap: "Spread between regions over time, 2000 = 100. A value below 100 means the regions are more alike than in 2000."
+fig, ax = plt.subplots(figsize=(9, 5))
+for name, w in [("GDP per head", gdp), ("Employment 20-64", emp),
+                ("Youth unemp. 15-24", w24), ("Youth unemp. 15-29", w29)]:
+    s = np.log(w).std()
+    ax.plot(s.index, s / s[2000] * 100, label=name)
+ax.axhline(100, color="grey", linewidth=0.8)
+ax.set_xlabel("Year")
+ax.set_ylabel("Spread between regions (2000 = 100)")
+ax.set_title("Spread of regions over time: below 100 = more alike than in 2000")
+ax.legend()
+ax.grid(alpha=0.3)
+fig.tight_layout()
+plt.show()
+```
+
+Over the whole period 2000-2024 the two tests agree for all four indicators: the spread is smaller and the slope is negative (@tbl-q4-tests). In the crisis (2008-2013) they also agree, on bad news: for employment and for youth unemployment the spread grows by about a third and the slope turns positive, so the regions became less alike (@fig-q4-spread). They disagree after 2008. For youth unemployment in 2008-2024 the spread does not fall (+1.9% for ages 15-24, +6.2% for ages 15-29), while the slope is still negative (-0.15 for both), although the R-squared is only 0.05. For employment in 2008-2024 the spread is almost unchanged (-4.5%) while the slope is clearly negative (-0.19). For GDP in 2008-2013 the spread is flat (-1.6%) and the slope only slightly negative, a small difference.
+
+```{python}
+#| label: youth-outliers
+# regions that do not follow the catching-up pattern (ages 15-24)
+d24["predicted"] = m24.intercept + m24.slope * d24[2000]
+d24["gap"] = d24["change"] - d24["predicted"]
+print(d24.sort_values("gap", ascending=False).head(8)[[2000, 2024, "change", "predicted", "gap"]].round(1))
+print("Regions where youth unemployment (15-24) went UP:", int((d24["change"] > 0).sum()), "of", len(d24))
+print(d24.sort_values("gap").head(5)[[2000, 2024, "change", "predicted", "gap"]].round(1))
+```
+
+The reason is that the catching-up test only asks whether the regions that started worse improved more. It does not ask whether other regions fell behind. In 56 of the 123 regions youth unemployment (ages 15-24) was higher in 2024 than in 2000. The regions that did worst compared with the pattern are mostly Spanish and Romanian (for example ES23, ES42, RO22, RO41, RO31; ES63 is the small city of Ceuta, where numbers are noisy), while Polish, Czech and Slovak regions (PL51, PL22, CZ08, PL21, SK03) fell much more than the pattern predicts. This means that regions that started high, such as southern Italy, Poland and Slovakia, fell the most, but other regions moved the wrong way, so the overall spread did not shrink after 2008.
+
+### Which test do we believe?
+
+For the question "is the gap closing?" we believe the spread test more, because it measures the gap directly. The catching-up test shows who improved, but it cannot show that the gap closed. For youth unemployment we read both tests with care. The spread line jumps for data reasons (the break in 2005 and the missing German regions from 2020) and depends on the end year: in 2019 it was back at its 2000 level. The catching-up slope is probably too strong, because the starting values are noisy (about 20% of the 15-24 values are flagged as low reliability) and a region whose rate in 2000 was too high by chance looks like it improved a lot; we did not test this. We trust a result most when the tests, the two age groups and the sub-periods agree, as for GDP. For youth unemployment after 2008 the tests disagree, so we cannot say that regions became more alike.
+
+### Limitations of this analysis
+
+- Only 123 of 248 regions (ages 15-24) and 151 of 251 regions (ages 15-29) have a value in both 2000 and 2024, so the catching-up test covers about half of the regions.
+- About 20% of the 15-24 values are flagged as low reliability.
+- The set of regions changes from year to year and there are breaks in the series (2005 and 2021). From 2020 the German regions have no values, so the spread line jumps for reasons that are not about the regions.
+- The result depends on the start year and the end year (2019 against 2024).
+- The catching-up slope may be too strong because of noisy starting values (not tested).
+- We did not test whether the slopes for ages 15-24 and 15-29 differ significantly.
+- The sub-periods (2008 and 2013) are our own choice, and other cut points could give slightly different numbers.
 
 ## Conclusion and limitations
 

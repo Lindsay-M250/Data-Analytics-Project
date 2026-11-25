@@ -66,6 +66,8 @@ All data comes from Eurostat (open data). Every table was downloaded **unfiltere
 - **Format:** the TSV files are wide (one column per year). Each value can carry a flag, for example `45.1 b`.
 - **Flags:** `b` = break in time series, `p` = provisional, `u` = low reliability, `e` = estimated, `d` = definition differs. We keep them when converting the files, because they matter for what we trust.
 
+- **Youth unemployment files:** `youth_age_groups.py` reads the raw unemployment file and writes `data/clean/youth_15_24.csv` (ages 15-24, the main measure, identical to `youth.csv`) and `data/clean/youth_15_29.csv` (ages 15-29, the check). Both use the same filters (percent, both sexes, all education levels) and region rules as `Cleaning code 2.py`; only the age group differs.
+
 ### What we know about the data so far
 
 - The GDP table has 285 NUTS2 regions with euro-per-head values. 41 are outside the EU (Turkey 26, Norway 6, Serbia 4, Albania 3, Montenegro 1, North Macedonia 1). The EU27 has 244.
@@ -148,6 +150,13 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 - Only 90 of 248 regions have youth unemployment in all 25 years.
 - GVA per head loses 388 region-years where no population value exists.
 
+- Youth unemployment: only 123 of 248 regions (ages 15-24) and 151 of 251 regions (ages 15-29) have a value in both 2000 and 2024, so the catching-up test covers about half of the regions.
+- About 20% of the 15-24 values (11% of the 15-29 values) are flagged `u` (low reliability).
+- The youth spread line jumps for data reasons: Eurostat flags 218 values in 2005 as a break in the series, and from 2020 none of the 20 German regions that had a value in 2019 has one.
+- The youth spread test depends on the end year: in 2019 the spread was back at its 2000 level.
+- The youth catching-up slope may be too strong because of noisy starting values (not tested).
+- We did not test whether the 15-24 and 15-29 slopes differ significantly.
+- The sub-periods used in Question 4 (2008 and 2013) are our own choice.
 
 ## Work split
 
