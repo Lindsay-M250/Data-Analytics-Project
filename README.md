@@ -106,9 +106,9 @@ Every choice about the data is made by the whole group and written here with the
 | 5 | Sector grouping | 15 sector codes, some inside others | The six broad sectors that do not overlap: A, B-E, F, G-J, K-N, O-U. Shares of total gross value added (`TOTAL`) | These six add up to the total, so shares are consistent. The overlapping codes (for example C inside B-E) would count the same value twice | agreed |
 | 6 | Which countries | EU27 only (244 regions) or all 285 | EU27 only (244 regions) | Our question is about EU regions and EU cohesion funding. Turkey, Norway, Serbia, Albania, Montenegro and North Macedonia are not EU members | agreed |
 | 7 | Missing data | Drop regions with gaps, or keep and work around | Keep regions with a GDP value in both 2000 and 2024 and list how many we lose and which | Convergence tests compare the start and end of the period, so a region needs both | agreed |
-| 8 | Old region codes | Recode all, recode renames only, or leave as they are | Recode pure renames only (Slovenia SI01/SI02, the Netherlands NL31/NL33, nine Greek codes in population). Splits and merges are left as gaps | A rename is the same area, so the history can be joined safely. A split would need population weights or invented values | proposed |
-| 9 | Eurostat flags | Keep or drop | Keep, in a column next to each value | Flags such as `b` (break in series) and `p` (provisional) matter for what we trust | proposed |
-| 10 | One cleaning script | Rethabile's notebook or `clean_data.py` | `clean_data.py`, which includes all of his calculations | It starts from the raw files in the repo and produces the same values as his notebook, plus flags and region renames | proposed |
+| 8 | Old region codes | leave as they are | Recode pure renames only (Slovenia SI01/SI02, the Netherlands NL31/NL33, nine Greek codes in population). Splits and merges are left as gaps | A rename is the same area, so the history can be joined safely. A split would need population weights or invented values | agreed |
+| 9 | Eurostat flags | Keep or drop | Keep, in a column next to each value | Flags such as `b` (break in series) and `p` (provisional) matter for what we trust | agreed|
+| 10 | One cleaning script |  `clean_data.py` | `clean_data.py`, which includes all the calculations | It starts from the raw files in the repo and produces the same values as our  notebook in archive, plus flags and region renames | agreed |
 
 ### Big city regions (commuter check, Question 1)
 
@@ -163,7 +163,7 @@ Add every limitation we find, and what would change our conclusion. This feeds t
 
 | Person | Table | Before the data freeze (until 6 Nov) | After the freeze (7 Nov onwards) |
 |---|---|---|---|
-| Rethabile | Population, plus joining all tables | Downloads the population table and writes its conversion code. Reviews and adjusts the proposed filters, keeping a reason for each decision. Writes the script that joins all the tables, matches the regions and checks the region counts. Keeps the processing log | Works with Badusha on Question 3, helps with the limitations section, and re-runs the whole project from scratch to check it works |
+| Rethabile | Population, plus joining all tables | Downloads the population table and writes its conversion code. Reviews and adjusts the proposed filters, keeping a reason for each decision. Writes the script that joins all the tables, matches the regions and checks the region counts | Works with Badusha on Question 3, helps with the limitations section, and re-runs the whole project from scratch to check it works |
 | Lindsay | GDP | Codebook, conversion code for GDP, reviews Rethabile's proposal for the GDP unit and time window, counts regions per year, checks the joined result. Keeps AI_Usage.md and looks after the README | Question 1: is the gap between regions getting smaller? |
 | Bhongolethu | Employment | Codebook, conversion code for employment, reviews Rethabile's proposal for the age group and sex choice, checks the joined result. Keeps the decision log | Question 2: do poorer regions grow faster? |
 | Winnie | Youth unemployment | Codebook, conversion code for youth unemployment, reviews Rethabile's proposal (15-24 vs 15-29), checks the joined result | Question 4: where do the two tests disagree? Puts the presentation together |
@@ -183,6 +183,6 @@ Everyone also writes the data and methods section of the report for their own ta
 
 - Raw files in `data/raw_data/` are never edited.
 - All cleaning and merging is done in code, not by hand.
-- Every decision goes in the decision log, every data change in the processing log, every limitation in the limitations log.
+- Every decision goes in the decision log, every limitation in the limitations log.
 - Every use of AI goes in `AI_Usage.md`.
 - Run `git pull` before you start and `git push` when you finish, so nobody overwrites anyone's work.
