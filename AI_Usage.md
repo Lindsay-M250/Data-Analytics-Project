@@ -1,28 +1,11 @@
 # AI Usage Declaration
 
-Tool: Claude (Anthropic), model Claude Sonnet 5.5 (claude-sonnet-5-5), default settings. Effort: [fill in].
+All team members used Claude (Anthropic), model Claude Sonnet 5.5, default settings. Everyone ran the code themselves and checked the results against the data. Decisions were made by the group.
 
-## Lindsay
-
-| Task | What I asked (summary) | What the AI produced | What I did myself |
+| Member | Part | What Claude helped with | What we did ourselves |
 |---|---|---|---|
-| Question 1: spread of GDP per head | How to measure whether the gap between regions narrows | Python code for the spread (standard deviation of log GDP per head), three samples, tables and chart | Ran it on our data and compared the output |
-| Question 1: interpretation | Refine my draft text | Reworded paragraphs, check for Romania's effect | Checked every number against the code output and edited the text |
-| Question 1: robustness | Check without big cities, from 2003 and in euro | Code for the three checks | Ran it on our raw GDP file and read the results |
-| Project documents | README and report structure | Drafts | Edited them; content decided by the group |
-
-Checking: I ran all code myself and compared the numbers in the text with the output. The AI made mistakes that I corrected (for example, wrong claims about region counts and timing), so the code output decided what stayed in the report.
-
-## Bhongolethu
-
-
-## Winnie
-
-| Task | What I asked (summary) | What the AI produced | What I did myself |
-|---|---|---|---|
-| Youth data: ages 15-24 and 15-29 | How to make one clean file per age group from the raw unemployment file, with the team's cleaning rules | A script (`youth_age_groups.py`) copied from the team's cleaning code; only the age group differs | Ran it and checked that the 15-24 file is identical to `youth.csv` |
-| Question 4: both tests on youth data | Step-by-step help to apply the Question 1 and 2 methods to the youth data and compare the two age groups | Python code, tables, charts and an explanation of each step | Ran every chunk in Positron and compared my output with the expected numbers |
-| Question 4: where the two tests disagree | How to put the spread test and the catching-up test side by side for GDP, employment and youth | Code for the comparison table and chart, and a draft of the report text | Read every paragraph and rewrote the text in my own words |
-| Setup | Python and Quarto errors on my laptop | Step-by-step fixes | Ran them and sent screenshots |
-
-Checking: I ran all code myself and compared the numbers in the text with the output. The AI corrected two of its own statements after checking the data: the dots at the bottom right of the catching-up chart are mostly southern Italian regions (not Polish, Czech or Slovak), and the 2005 drop in the youth spread is not explained by new regions joining the sample.
+| Lindsay | Question 1; `clean_data.py`; README | Code and text for the spread of GDP per head and the robustness checks; one cleaning script from raw to clean files; drafts of the README and conclusion; practice questions | Ran all code, checked every number in the text against the output, corrected AI mistakes (e.g. region counts), compared our cleaned files with Rethabile's |
+| Bhongolethu | Question 2; employment file | Python code, debugging and explaining the results | Ran the code and checked the results |
+| Badusha | Question 3 | Python code, debugging and explaining the results | Ran the code and checked the results |
+| Winnie | Question 4; youth data | Youth file script (same cleaning rules, different age group); code, tables and charts for the comparison; draft text; fixing Python and Quarto errors | Ran every chunk, checked output against expected numbers, rewrote the text in her own words |
+| Rethabile | Data cleaning notebook | Code that turns the Eurostat files into the cleaned tables | Ran the code and checked the tables |
